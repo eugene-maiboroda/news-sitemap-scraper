@@ -16,7 +16,10 @@ public class FakeArticleRepository implements ArticleRepositoryPort {
     }
 
     @Override
-    public List<ArticleLink> findUnparsedBatch(int limit) {
+    public void insertLinks(List<ArticleLink> links) {}
+
+    @Override
+    public List<ArticleLink> findNewBatch(int limit) {
         return links;
     }
 
@@ -26,7 +29,8 @@ public class FakeArticleRepository implements ArticleRepositoryPort {
     }
 
     @Override
-    public void insertLinks(List<ArticleLink> links) {
+    public void markError(String articleUrl, String errorMessage) {
+        System.out.println("ERROR: " + articleUrl + " | " + errorMessage);
     }
 
     @Override

@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,8 +25,8 @@ public class ArticleEntity {
     @Id
     private String id;
 
-    @Column(name = "team_name")
-    private String team;
+    @Column(name = "category")
+    private String category;
 
     @Column(name = "article_url")
     private String url;
@@ -36,12 +37,12 @@ public class ArticleEntity {
     private String title;
 
     @Column(name = "sub_title")
-    private String sub_title;
+    private String subTitle;
 
     private String author;
 
     @Column(name = "author_link")
-    private String author_link;
+    private String authorLink;
 
     private String content;
 
@@ -50,5 +51,6 @@ public class ArticleEntity {
 
     private String caption;
 
+    @CreationTimestamp
     private LocalDateTime createdAt;
 }

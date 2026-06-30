@@ -6,8 +6,5 @@ import java.util.List;
 
 public interface SitemapPort {
 
-    List<String> loadQuarterUrls(String teamSitemapUrl);
-
-    List<ArticleLink> loadArticleLinks(String quarterSitemapUrl, String teamName);
-
+    List<ArticleLink> discoverLinks(String sitemapUrl);
 }

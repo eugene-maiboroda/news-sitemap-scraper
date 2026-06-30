@@ -10,9 +10,11 @@ public interface ArticleRepositoryPort {
 
     void insertLinks(List<ArticleLink> links);
 
-    List<ArticleLink> findUnparsedBatch(int limit);
+    List<ArticleLink> findNewBatch(int limit);
 
     void saveArticleAndMarkParsed(Article article, String articleUrl);
+
+    void markError(String articleUrl, String errorMessage);
 
     List<Article> findAllArticles();
 

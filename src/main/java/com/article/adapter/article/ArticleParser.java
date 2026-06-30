@@ -4,11 +4,14 @@ import com.article.adapter.http.HttpContentLoader;
 import com.article.adapter.shared.ParseUtils;
 import com.article.domain.Article;
 import com.article.domain.ArticleLink;
+import com.article.domain.ParseResult;
 import com.article.port.ArticlePagePort;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpStatusCodeException;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -18,6 +21,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.HexFormat;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ArticleParser implements ArticlePagePort {
@@ -34,25 +38,34 @@ public class ArticleParser implements ArticlePagePort {
     private final HttpContentLoader contentLoader;
 
     @Override
-    public Article parse(ArticleLink link) {
-        Document doc = contentLoader.loadDocument(link.articleUrl());
+    public ParseResult parse(ArticleLink link) {
+        String url = link.articleUrl();
+        try {
+            Document doc = contentLoader.loadDocument(url);
 
-        LocalDate published = parsePublishDate(doc);
-        String image = resolveImage(doc);
+            Article article = Article.builder()
+                    .id(idFromUrl(url))
+                    .category(null)
+                    .url(url)
+                    .publishDate(parsePublishDate(doc))
+                    .title(ParseUtils.getText(doc.select(TITLE_SELECTOR)))
+                    .subTitle(ParseUtils.getText(doc.select(SUB_TITLE_SELECTOR)))
+                    .author(ParseUtils.getText(doc.select(AUTHOR_SELECTOR).eq(0)))
+                    .authorLink(ParseUtils.getFirstLink(doc.select(AUTHOR_SELECTOR).eq(0)))
+                    .content(doc.select(CONTENT_SELECTOR).html())
+                    .imageUrl(resolveImage(doc))
+                    .caption(ParseUtils.getText(doc.select(CAPTION_SELECTOR)))
+                    .build();
 
-        return Article.builder()
-                .id(idFromUrl(link.articleUrl()))
-                .team(link.teamName())
-                .url(link.articleUrl())
-                .publishDate(published)
-                .title(ParseUtils.getText(doc.select(TITLE_SELECTOR)))
-                .subTitle(ParseUtils.getText(doc.select(SUB_TITLE_SELECTOR)))
-                .author(ParseUtils.getText(doc.select(AUTHOR_SELECTOR).eq(0)))
-                .authorLink(ParseUtils.getLinks(doc.select(AUTHOR_SELECTOR).eq(0)).get(0))
-                .content(doc.select(CONTENT_SELECTOR).html())
-                .imageUrl(image)
-                .caption(ParseUtils.getText(doc.select(CAPTION_SELECTOR)))
-                .build();
+            return ParseResult.ok(article);
+
+        } catch (HttpStatusCodeException e) {
+            log.error("[PARSE] HTTP {} for {}", e.getStatusCode().value(), url);
+            return ParseResult.error(url, "HTTP " + e.getStatusCode().value());
+        } catch (Exception e) {
+            log.error("[PARSE] Failed to fetch {}: {}", url, e.getMessage());
+            return ParseResult.error(url, e.getMessage());
+        }
     }
 
     private LocalDate parsePublishDate(Document doc) {

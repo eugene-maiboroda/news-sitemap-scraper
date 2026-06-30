@@ -24,7 +24,7 @@ public class ImageDownloadAdapter implements ImageDownloadPort {
     public void download(ArticleImageRef ref) {
         try {
             Path dir = Path.of(collectorProps.imagesDir());
-            String fileName = ParseUtils.imageFilePrefix(ref.teamName(), ref.id()) + resolveExtension(ref.imageUrl());
+            String fileName = ParseUtils.imageFilePrefix(ref.category(), ref.id()) + resolveExtension(ref.imageUrl());
             Path target = dir.resolve(fileName);
 
             if (Files.exists(target)) {

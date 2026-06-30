@@ -1,9 +1,9 @@
 package com.article.port;
 
-import com.article.domain.Article;
 import com.article.domain.ArticleLink;
+import com.article.domain.ParseResult;
 
 public interface ArticlePagePort {
 
-    Article parse(ArticleLink link);
+    ParseResult parse(ArticleLink link);
 }

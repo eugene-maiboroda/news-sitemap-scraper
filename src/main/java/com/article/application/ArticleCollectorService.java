@@ -1,14 +1,19 @@
 package com.article.application;
 
-import com.article.domain.*;
+import com.article.domain.Article;
+import com.article.domain.ArticleImageRef;
+import com.article.domain.ArticleLink;
+import com.article.domain.ParseResult;
 import com.article.infrastructure.CollectorProps;
-import com.article.port.*;
+import com.article.port.ArticlePagePort;
+import com.article.port.ArticleRepositoryPort;
+import com.article.port.ExportPort;
+import com.article.port.ImageDownloadPort;
+import com.article.port.SitemapPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -24,16 +29,18 @@ public class ArticleCollectorService {
     private final CollectorProps properties;
     private final ParallelExecutor parallelExecutor;
 
-    public void run(List<TeamConfig> teams) {
-        log.info("SI Article Collector started | teams={}", teams.size());
+    public void run(List<String> sitemapUrls) {
+        log.info("NYPost Article Collector started | sitemaps={}", sitemapUrls.size());
 
-        if (properties.steps().collectLinks()) {
-            log.info("Step: COLLECT LINKS");
-            for (TeamConfig team : teams) {
+        if (properties.steps().discoverLinks()) {
+            log.info("Step: DISCOVER LINKS");
+            for (String sitemapUrl : sitemapUrls) {
                 try {
-                    collectLinks(team);
+                    List<ArticleLink> links = sitemapPort.discoverLinks(sitemapUrl);
+                    repositoryPort.insertLinks(links);
+                    log.info("Discovered {} links from {}", links.size(), sitemapUrl);
                 } catch (Exception e) {
-                    log.error("Failed to collect links for team {}", team.teamName(), e);
+                    log.error("Failed to discover links from {}", sitemapUrl, e);
                 }
             }
         }
@@ -59,27 +66,7 @@ public class ArticleCollectorService {
             log.info("Export finished");
         }
 
-        log.info("SI Article Collector finished");
-    }
-
-    private void collectLinks(TeamConfig team) {
-        log.info("Collecting links | team={} range={}..{}", team.teamName(), team.startDate(), team.endDate());
-
-        List<String> quarterUrls = sitemapPort.loadQuarterUrls(team.teamSitemapUrl());
-
-        log.info("Quarter sitemaps found: {}", quarterUrls.size());
-
-        List<ArticleLink> allLinks = new ArrayList<>();
-        for (String quarterUrl : quarterUrls) {
-            allLinks.addAll(sitemapPort.loadArticleLinks(quarterUrl, team.teamName()));
-        }
-
-        List<ArticleLink> filtered = filterByDateRange(allLinks, team.startDate(), team.endDate());
-        log.info("Links collected={} filtered={}", allLinks.size(), filtered.size());
-
-        if (!filtered.isEmpty()) {
-            repositoryPort.insertLinks(filtered);
-        }
+        log.info("NYPost Article Collector finished");
     }
 
     private void parsePages() {
@@ -87,31 +74,24 @@ public class ArticleCollectorService {
         int threads = properties.parseThreads();
         log.info("Parsing pages | batchSize={} threads={}", batchSize, threads);
 
-        while (true) {
-            List<ArticleLink> batch = repositoryPort.findUnparsedBatch(batchSize);
-            if (batch.isEmpty()) {
-                log.info("No more links to parse");
-                break;
-            }
-
+        List<ArticleLink> batch;
+        while (!(batch = repositoryPort.findNewBatch(batchSize)).isEmpty()) {
             parallelExecutor.execute(batch, this::parseSingle, threads);
-
         }
+
+        log.info("No more links to parse");
     }
 
     private void parseSingle(ArticleLink link) {
-        try {
-            Article article = articlePagePort.parse(link);
-            repositoryPort.saveArticleAndMarkParsed(article, link.articleUrl());
-            log.info("[PARSED] {} | {}", link.teamName(), link.articleUrl());
-        } catch (Exception e) {
-            log.error("[FAILED] {} | {}", link.teamName(), link.articleUrl(), e);
+        switch (articlePagePort.parse(link)) {
+            case ParseResult.Ok ok -> {
+                repositoryPort.saveArticleAndMarkParsed(ok.article(), link.articleUrl());
+                log.info("[PARSED] {}", link.articleUrl());
+            }
+            case ParseResult.Failure f -> {
+                repositoryPort.markError(link.articleUrl(), f.error().reason());
+                log.warn("[ERROR] {} | {}", link.articleUrl(), f.error().reason());
+            }
         }
-    }
-
-    private List<ArticleLink> filterByDateRange(List<ArticleLink> links, LocalDate start, LocalDate end) {
-        return links.stream()
-                .filter(l -> !l.articleDate().isBefore(start) && !l.articleDate().isAfter(end))
-                .toList();
     }
 }

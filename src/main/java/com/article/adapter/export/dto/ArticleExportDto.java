@@ -7,7 +7,7 @@ import java.time.LocalDate;
 @Builder
 public record ArticleExportDto(
         String id,
-        String teamName,
+        String category,
         String articleUrl,
         String title,
         String subTitle,

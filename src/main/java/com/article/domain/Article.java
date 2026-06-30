@@ -3,10 +3,11 @@ package com.article.domain;
 import lombok.Builder;
 
 import java.time.LocalDate;
+
 @Builder
 public record Article(
         String id,
-        String team,
+        String category,
         String url,
         LocalDate publishDate,
         String title,
@@ -16,5 +17,4 @@ public record Article(
         String content,
         String imageUrl,
         String caption
-) {
-}
+) {}

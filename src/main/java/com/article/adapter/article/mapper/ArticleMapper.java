@@ -1,10 +1,11 @@
 package com.article.adapter.article.mapper;
 
 import com.article.adapter.article.persistence.entity.ArticleEntity;
-import com.article.adapter.article.persistence.entity.ArticleLinkEntity;
+import com.article.adapter.article.persistence.entity.LinkArticleEntity;
 import com.article.domain.Article;
 import com.article.domain.ArticleLink;
 import com.article.infrastructure.MapStructConfig;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -13,17 +14,21 @@ import java.util.List;
 @Mapper(config = MapStructConfig.class)
 public interface ArticleMapper {
 
+    @BeanMapping(ignoreUnmappedSourceProperties = {"createdAt"})
     Article toArticle(ArticleEntity entity);
 
     List<Article> toArticles(List<ArticleEntity> entities);
 
+    @Mapping(target = "createdAt", ignore = true)
     ArticleEntity toEntity(Article article);
 
-    ArticleLink toArticleLink(ArticleLinkEntity entity);
+    @BeanMapping(ignoreUnmappedSourceProperties = {"id", "status", "errorMessage"})
+    ArticleLink toArticleLink(LinkArticleEntity entity);
 
-    List<ArticleLink> toArticleLinks(List<ArticleLinkEntity> entities);
+    List<ArticleLink> toArticleLinks(List<LinkArticleEntity> entities);
 
-    @Mapping(target = "id", expression = "java(java.util.UUID.randomUUID())")
-    @Mapping(target = "parsed", expression = "java(false)")
-    ArticleLinkEntity toLinkEntity(ArticleLink link);
+    @Mapping(target = "id", expression = "java(java.util.UUID.randomUUID().toString())")
+    @Mapping(target = "status", expression = "java(com.article.domain.CrawlStatus.NEW)")
+    @Mapping(target = "errorMessage", ignore = true)
+    LinkArticleEntity toLinkEntity(ArticleLink link);
 }

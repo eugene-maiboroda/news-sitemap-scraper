@@ -2,6 +2,8 @@ package com.article.infrastructure;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.List;
+
 @ConfigurationProperties(prefix = "collector")
 public record CollectorProps(
         Steps steps,
@@ -10,10 +12,11 @@ public record CollectorProps(
         int imageThreads,
         int deliveryLimit,
         String exportDir,
-        String imagesDir
+        String imagesDir,
+        List<String> sitemapUrls
 ) {
     public record Steps(
-            boolean collectLinks,
+            boolean discoverLinks,
             boolean parsePages,
             boolean downloadImages,
             boolean exportJson

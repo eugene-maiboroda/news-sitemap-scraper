@@ -35,6 +35,11 @@ public class ParseUtils {
         return EMPTY;
     }
 
+    public static String getFirstLink(Elements elements) {
+        List<String> links = getLinks(elements);
+        return links.isEmpty() ? EMPTY : links.get(0);
+    }
+
     public static List<String> getLinks(Elements elements) {
         List<String> links = new ArrayList<>();
         for (Element element : elements) {
@@ -68,12 +73,10 @@ public class ParseUtils {
                 .orElse(EMPTY);
     }
 
-    public static String normalizeTeamName(String team) {
-        return team.toLowerCase().replaceAll("\\s+", "_");
-    }
-
-    public static String imageFilePrefix(String teamName, String id) {
-        return normalizeTeamName(teamName) + "_" + id;
+    public static String imageFilePrefix(String category, String id) {
+        String prefix = (category == null || category.isBlank()) ? "unknown" :
+                category.toLowerCase().replaceAll("\\s+", "_");
+        return prefix + "_" + id;
     }
 
     private static Integer extractWidth(String url) {

@@ -4,6 +4,7 @@ import com.article.adapter.article.mapper.ArticleMapper;
 import com.article.domain.Article;
 import com.article.domain.ArticleImageRef;
 import com.article.domain.ArticleLink;
+import com.article.domain.CrawlStatus;
 import com.article.port.ArticleRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -30,15 +31,22 @@ public class ArticleRepositoryService implements ArticleRepositoryPort {
     }
 
     @Override
-    public List<ArticleLink> findUnparsedBatch(int limit) {
-        return articleMapper.toArticleLinks(linkRepository.findUnparsedBatch(PageRequest.of(0, limit)));
+    public List<ArticleLink> findNewBatch(int limit) {
+        return articleMapper.toArticleLinks(
+                linkRepository.findByStatusOrderByArticleDate(CrawlStatus.NEW, PageRequest.of(0, limit)));
     }
 
     @Override
     @Transactional
     public void saveArticleAndMarkParsed(Article article, String articleUrl) {
         articleRepository.save(articleMapper.toEntity(article));
-        linkRepository.markParsed(articleUrl);
+        linkRepository.updateStatus(articleUrl, CrawlStatus.PARSED);
+    }
+
+    @Override
+    @Transactional
+    public void markError(String articleUrl, String errorMessage) {
+        linkRepository.updateStatusWithError(articleUrl, CrawlStatus.ERROR, errorMessage);
     }
 
     @Override

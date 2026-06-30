@@ -28,7 +28,8 @@ public class JsonExportAdapter implements ExportPort {
     @Override
     public void export(List<Article> articles) {
         List<ArticleExportDto> dtos = articles.stream()
-                .sorted(Comparator.comparing(Article::team).thenComparing(Article::publishDate))
+                .sorted(Comparator.comparing(Article::category, Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparing(Article::publishDate))
                 .map(this::toDto)
                 .toList();
 
@@ -48,17 +49,16 @@ public class JsonExportAdapter implements ExportPort {
     private ArticleExportDto toDto(Article a) {
         return ArticleExportDto.builder()
                 .id(a.id())
-                .teamName(a.team())
+                .category(a.category())
                 .articleUrl(a.url())
                 .title(a.title())
                 .subTitle(a.subTitle())
                 .publishedDate(a.publishDate())
                 .author(a.author())
                 .authorLink(a.authorLink())
-                .imageId(ParseUtils.imageFilePrefix(a.team(), a.id()))
+                .imageId(ParseUtils.imageFilePrefix(a.category(), a.id()))
                 .imageCaption(a.caption())
                 .content(a.content())
                 .build();
     }
 }
-

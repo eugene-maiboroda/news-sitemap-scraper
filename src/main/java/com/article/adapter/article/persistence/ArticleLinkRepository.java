@@ -1,6 +1,7 @@
 package com.article.adapter.article.persistence;
 
-import com.article.adapter.article.persistence.entity.ArticleLinkEntity;
+import com.article.adapter.article.persistence.entity.LinkArticleEntity;
+import com.article.domain.CrawlStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -9,17 +10,20 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
-interface ArticleLinkRepository extends JpaRepository<ArticleLinkEntity, UUID> {
+interface ArticleLinkRepository extends JpaRepository<LinkArticleEntity, String> {
 
     boolean existsByArticleUrl(String articleUrl);
 
-    @Query("SELECT a FROM ArticleLinkEntity a WHERE a.parsed = false ORDER BY a.articleDate")
-    List<ArticleLinkEntity> findUnparsedBatch(Pageable pageable);
+    List<LinkArticleEntity> findByStatusOrderByArticleDate(CrawlStatus status, Pageable pageable);
 
     @Modifying
     @Transactional
-    @Query("UPDATE ArticleLinkEntity a SET a.parsed = true WHERE a.articleUrl = :url")
-    void markParsed(@Param("url") String url);
+    @Query("UPDATE LinkArticleEntity a SET a.status = :status WHERE a.articleUrl = :url")
+    void updateStatus(@Param("url") String url, @Param("status") CrawlStatus status);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE LinkArticleEntity a SET a.status = :status, a.errorMessage = :msg WHERE a.articleUrl = :url")
+    void updateStatusWithError(@Param("url") String url, @Param("status") CrawlStatus status, @Param("msg") String msg);
 }
