@@ -4,7 +4,7 @@ import com.article.adapter.export.dto.ArticleExportDto;
 import com.article.adapter.export.dto.ArticlesExportDto;
 import com.article.adapter.shared.ParseUtils;
 import com.article.domain.Article;
-import com.article.infrastructure.CollectorProps;
+import com.article.bootstrap.CollectorProps;
 import com.article.port.ExportPort;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;

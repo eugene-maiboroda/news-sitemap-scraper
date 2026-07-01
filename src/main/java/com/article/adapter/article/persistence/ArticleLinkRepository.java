@@ -13,8 +13,6 @@ import java.util.List;
 
 interface ArticleLinkRepository extends JpaRepository<LinkArticleEntity, String> {
 
-    boolean existsByArticleUrl(String articleUrl);
-
     List<LinkArticleEntity> findByStatusOrderByArticleDate(CrawlStatus status, Pageable pageable);
 
     @Modifying

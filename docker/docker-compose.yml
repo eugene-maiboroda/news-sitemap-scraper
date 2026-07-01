@@ -4,11 +4,11 @@ services:
   si-postgres:
     image: postgres:15
     environment:
-      POSTGRES_DB: si_articles
+      POSTGRES_DB: nypost_articles
       POSTGRES_USER: eyal
       POSTGRES_PASSWORD: eyal_password
     ports:
-      - "5432:5432"
+      - "5437:5432"
     volumes:
       - si_article_pgdata:/var/lib/postgresql/data
 

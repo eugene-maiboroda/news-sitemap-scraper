@@ -8,26 +8,36 @@ import com.article.domain.CrawlStatus;
 import com.article.port.ArticleRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class ArticleRepositoryService implements ArticleRepositoryPort {
 
+    private static final String BULK_INSERT_SQL = """
+            INSERT INTO article_links (id, article_url, article_date, status)
+            VALUES (?, ?, ?, 'NEW')
+            ON CONFLICT (article_url) DO NOTHING
+            """;
+
     private final ArticleLinkRepository linkRepository;
     private final ArticleRepository articleRepository;
     private final ArticleMapper articleMapper;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     @Transactional
     public void insertLinks(List<ArticleLink> links) {
-        links.stream()
-                .filter(link -> !linkRepository.existsByArticleUrl(link.articleUrl()))
-                .map(articleMapper::toLinkEntity)
-                .forEach(linkRepository::save);
+        jdbcTemplate.batchUpdate(BULK_INSERT_SQL, links, 500, (ps, link) -> {
+            ps.setString(1, UUID.randomUUID().toString());
+            ps.setString(2, link.articleUrl());
+            ps.setObject(3, link.articleDate());
+        });
     }
 
     @Override

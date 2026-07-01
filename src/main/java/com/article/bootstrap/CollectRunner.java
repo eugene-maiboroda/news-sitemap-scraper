@@ -1,4 +1,4 @@
-package com.article.infrastructure;
+package com.article.bootstrap;
 
 import com.article.application.ArticleCollectorService;
 import org.slf4j.Logger;

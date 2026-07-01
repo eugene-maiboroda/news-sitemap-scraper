@@ -1,4 +1,4 @@
-package com.article.infrastructure;
+package com.article.bootstrap;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

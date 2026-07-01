@@ -4,7 +4,7 @@ import com.article.domain.Article;
 import com.article.domain.ArticleImageRef;
 import com.article.domain.ArticleLink;
 import com.article.domain.ParseResult;
-import com.article.infrastructure.CollectorProps;
+import com.article.bootstrap.CollectorProps;
 import com.article.port.ArticlePagePort;
 import com.article.port.ArticleRepositoryPort;
 import com.article.port.ExportPort;
@@ -55,7 +55,7 @@ public class ArticleCollectorService {
             log.info("Step: DOWNLOAD IMAGES");
             List<ArticleImageRef> imageRefs = repositoryPort.findImageRefsForDelivery(properties.deliveryLimit());
             log.info("Downloading {} images", imageRefs.size());
-            parallelExecutor.execute(imageRefs, imageDownloadPort::download, threads);
+            parallelExecutor.execute(imageRefs, imageDownloadPort::download);
             log.info("Download finished");
         }
 
@@ -76,7 +76,7 @@ public class ArticleCollectorService {
 
         List<ArticleLink> batch;
         while (!(batch = repositoryPort.findNewBatch(batchSize)).isEmpty()) {
-            parallelExecutor.execute(batch, this::parseSingle, threads);
+            parallelExecutor.execute(batch, this::parseSingle);
         }
 
         log.info("No more links to parse");

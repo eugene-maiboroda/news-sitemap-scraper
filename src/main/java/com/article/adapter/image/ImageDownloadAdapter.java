@@ -3,7 +3,7 @@ package com.article.adapter.image;
 import com.article.adapter.http.HttpContentLoader;
 import com.article.adapter.shared.ParseUtils;
 import com.article.domain.ArticleImageRef;
-import com.article.infrastructure.CollectorProps;
+import com.article.bootstrap.CollectorProps;
 import com.article.port.ImageDownloadPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

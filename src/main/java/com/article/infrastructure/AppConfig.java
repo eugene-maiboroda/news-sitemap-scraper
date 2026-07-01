@@ -1,5 +1,6 @@
 package com.article.infrastructure;
 
+import com.article.bootstrap.CollectorProps;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -9,6 +10,8 @@ import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 import java.time.Duration;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Configuration
 public class AppConfig {
@@ -27,5 +30,10 @@ public class AppConfig {
         return RestClient.builder()
                 .requestFactory(factory)
                 .build();
+    }
+
+    @Bean(destroyMethod = "shutdown")
+    public ExecutorService articleExecutor(CollectorProps props) {
+        return Executors.newFixedThreadPool(props.parseThreads());
     }
 }

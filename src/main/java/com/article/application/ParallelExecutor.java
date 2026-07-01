@@ -1,5 +1,6 @@
 package com.article.application;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -10,10 +11,12 @@ import java.util.function.Consumer;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class ParallelExecutor {
 
-    public <T> void execute(List<T> items, Consumer<T> consumer, int threads) {
-        ExecutorService executor = Executors.newFixedThreadPool(threads);
+    private final ExecutorService executor;
+
+    public <T> void execute(List<T> items, Consumer<T> consumer) {
         try {
             List<Future<?>> futures = new ArrayList<>();
             for (T item : items) {
