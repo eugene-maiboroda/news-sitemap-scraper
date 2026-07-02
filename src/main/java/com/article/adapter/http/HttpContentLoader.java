@@ -3,7 +3,9 @@ package com.article.adapter.http;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -15,9 +17,14 @@ import java.util.function.Supplier;
 public class HttpContentLoader {
 
     private final RestClient restClient;
+    private final HttpHeadersProvider httpHeadersProvider;
 
+    @Retryable(includes = HttpClientErrorException.TooManyRequests.class, multiplier = 2)
     public String loadText(String url) {
-        return execute(() -> restClient.get()
+        var request = restClient.get();
+        httpHeadersProvider.defaultHeaders().forEach(request::header);
+
+        return execute(() -> request
                 .uri(url)
                 .retrieve()
                 .body(String.class), url);

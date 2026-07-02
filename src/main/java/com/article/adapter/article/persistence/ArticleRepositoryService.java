@@ -7,6 +7,7 @@ import com.article.domain.ArticleLink;
 import com.article.domain.CrawlStatus;
 import com.article.port.ArticleRepositoryPort;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ArticleRepositoryService implements ArticleRepositoryPort {
 
     private static final String BULK_INSERT_SQL = """
@@ -33,11 +35,13 @@ public class ArticleRepositoryService implements ArticleRepositoryPort {
     @Override
     @Transactional
     public void insertLinks(List<ArticleLink> links) {
-        jdbcTemplate.batchUpdate(BULK_INSERT_SQL, links, 500, (ps, link) -> {
+        long start = System.currentTimeMillis();
+        jdbcTemplate.batchUpdate(BULK_INSERT_SQL, links, 1000, (ps, link) -> {
             ps.setString(1, UUID.randomUUID().toString());
             ps.setString(2, link.articleUrl());
             ps.setObject(3, link.articleDate());
         });
+        log.info("Insert took {} ms", System.currentTimeMillis() - start);
     }
 
     @Override

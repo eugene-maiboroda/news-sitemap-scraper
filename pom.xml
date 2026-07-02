@@ -21,6 +21,7 @@
         <java.version>21</java.version>
         <org.mapstruct.version>1.6.3</org.mapstruct.version>
         <jsoup.version>1.17.2</jsoup.version>
+        <playwright.version>1.49.0</playwright.version>
     </properties>
 
     <dependencies>
@@ -66,6 +67,11 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.microsoft.playwright</groupId>
+            <artifactId>playwright</artifactId>
+            <version>${playwright.version}</version>
         </dependency>
     </dependencies>
 

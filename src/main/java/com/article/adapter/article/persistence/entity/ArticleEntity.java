@@ -51,6 +51,9 @@ public class ArticleEntity {
 
     private String caption;
 
+    @Column(name = "raw_html")
+    private String rawHtml;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 }

@@ -19,6 +19,7 @@ public record CollectorProps(
             boolean discoverLinks,
             boolean parsePages,
             boolean downloadImages,
-            boolean exportJson
+            boolean exportJson,
+            boolean extractConnatixVideos
     ) {}
 }

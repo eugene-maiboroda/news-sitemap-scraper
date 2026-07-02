@@ -28,6 +28,7 @@ public class SitemapAdapter implements SitemapPort {
         List<ArticleLink> allLinks = new ArrayList<>();
         for (String dayUrl : dayUrls) {
             try {
+                Thread.sleep(150);
                 String dayXml = contentLoader.loadText(dayUrl);
                 allLinks.addAll(daySitemapParser.parseLinks(dayXml));
             } catch (Exception e) {

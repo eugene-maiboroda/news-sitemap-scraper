@@ -2,9 +2,13 @@ package com.article.adapter.article;
 
 import com.article.adapter.http.HttpContentLoader;
 import com.article.adapter.shared.ParseUtils;
+import com.article.adapter.video.ConnatixVideoExtractor;
+import com.article.adapter.video.JwVideoExtractor;
+import com.article.bootstrap.CollectorProps;
 import com.article.domain.Article;
 import com.article.domain.ArticleLink;
 import com.article.domain.ParseResult;
+import com.article.domain.Video;
 import com.article.port.ArticlePagePort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,38 +20,43 @@ import org.springframework.web.client.HttpStatusCodeException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
+
+import java.util.ArrayList;
 import java.util.HexFormat;
+import java.util.List;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class ArticleParser implements ArticlePagePort {
 
-    private static final String TITLE_SELECTOR = ".relative h1";
+    private static final String CATEGORY_SELECTOR = ".article-header__top span";
+    private static final String TITLE_SELECTOR = ".article-header h1";
     private static final String SUB_TITLE_SELECTOR = ".relative .article-intro";
     private static final String AUTHOR_SELECTOR = ".underline";
+    private static final String CONTENT_SELECTOR = ".article-content";
     private static final String IMAGE_SELECTOR = "#main-article div:has(.underline) + div source";
     private static final String ALT_IMAGE_SELECTOR = "#main-article div:has(.underline) + div figure img";
     private static final String CAPTION_SELECTOR = "#main-article div:has(.underline) + div div.items-center";
-    private static final String DATE_SELECTOR = "#main-article div:has(.underline) time";
-    private static final String CONTENT_SELECTOR = ".article-content";
 
+    //    private static final String DATE_SELECTOR = "#main-article div:has(.underline) time";
     private final HttpContentLoader contentLoader;
+    private final JwVideoExtractor jwVideoExtractor;
+    private final ConnatixVideoExtractor connatixVideoExtractor;
+    private final CollectorProps collectorProps;
 
     @Override
     public ParseResult parse(ArticleLink link) {
         String url = link.articleUrl();
         try {
             Document doc = contentLoader.loadDocument(url);
+            String articleId = idFromUrl(url);
 
             Article article = Article.builder()
-                    .id(idFromUrl(url))
-                    .category(null)
+                    .id(articleId)
+                    .category(ParseUtils.getText(doc.select(CATEGORY_SELECTOR)))
                     .url(url)
-                    .publishDate(parsePublishDate(doc))
+                    .publishDate(link.articleDate())
                     .title(ParseUtils.getText(doc.select(TITLE_SELECTOR)))
                     .subTitle(ParseUtils.getText(doc.select(SUB_TITLE_SELECTOR)))
                     .author(ParseUtils.getText(doc.select(AUTHOR_SELECTOR).eq(0)))
@@ -57,7 +66,13 @@ public class ArticleParser implements ArticlePagePort {
                     .caption(ParseUtils.getText(doc.select(CAPTION_SELECTOR)))
                     .build();
 
-            return ParseResult.ok(article);
+            List<Video> videos = new ArrayList<>();
+            jwVideoExtractor.extract(doc, articleId).ifPresent(videos::add);
+            if (collectorProps.steps().extractConnatixVideos()) {
+                connatixVideoExtractor.extract(articleId, url).ifPresent(videos::add);
+            }
+
+            return ParseResult.ok(article, videos);
 
         } catch (HttpStatusCodeException e) {
             log.error("[PARSE] HTTP {} for {}", e.getStatusCode().value(), url);
@@ -68,10 +83,10 @@ public class ArticleParser implements ArticlePagePort {
         }
     }
 
-    private LocalDate parsePublishDate(Document doc) {
-        String datetime = doc.select(DATE_SELECTOR).attr("datetime");
-        return Instant.parse(datetime).atZone(ZoneId.of("America/New_York")).toLocalDate();
-    }
+//    private LocalDate parsePublishDate(Document doc) {
+//        String datetime = doc.select(DATE_SELECTOR).attr("datetime");
+//        return Instant.parse(datetime).atZone(ZoneId.of("America/New_York")).toLocalDate();
+//    }
 
     private String resolveImage(Document doc) {
         Elements sourceTags = doc.select(IMAGE_SELECTOR);
