@@ -46,14 +46,10 @@ public class ArticleEntity {
 
     private String content;
 
-    @Column(name = "image_url")
-    private String imageUrl;
-
-    private String caption;
-
     @Column(name = "raw_html")
     private String rawHtml;
 
     @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 }

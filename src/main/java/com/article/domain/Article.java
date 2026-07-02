@@ -15,7 +15,5 @@ public record Article(
         String author,
         String authorLink,
         String content,
-        String imageUrl,
-        String caption,
         String rawHtml
 ) {}

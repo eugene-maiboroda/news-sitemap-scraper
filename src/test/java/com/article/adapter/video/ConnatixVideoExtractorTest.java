@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class ConnatixVideoExtractorTest {
@@ -78,6 +79,8 @@ class ConnatixVideoExtractorTest {
         assertEquals(mmid, video.connatixMmid());
         assertEquals("https://vid.connatix.com/%s/%s/mmid-%s/playlist.m3u8".formatted(contentId, streamId, mmid), video.m3u8Url());
         assertEquals(DownloadStatus.PENDING, video.downloadStatus());
+        // exact endpoint per the verified Python reference — no "/api/v1/" prefix, that variant 403s
+        verify(httpContentLoader).download("https://vid.connatix.com/%s/%s/2_media.bin".formatted(contentId, streamId));
     }
 
     @Test

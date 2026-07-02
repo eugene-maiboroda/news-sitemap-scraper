@@ -3,6 +3,7 @@ package com.article.application;
 import com.article.domain.Article;
 import com.article.domain.ArticleImageRef;
 import com.article.domain.ArticleLink;
+import com.article.domain.Image;
 import com.article.domain.ParseResult;
 import com.article.domain.Video;
 import com.article.bootstrap.CollectorProps;
@@ -10,12 +11,14 @@ import com.article.port.ArticlePagePort;
 import com.article.port.ArticleRepositoryPort;
 import com.article.port.ExportPort;
 import com.article.port.ImageDownloadPort;
+import com.article.port.ImageRepositoryPort;
 import com.article.port.SitemapPort;
 import com.article.port.VideoRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,6 +32,7 @@ public class ArticleCollectorService {
     private final ArticlePagePort articlePagePort;
     private final ExportPort exportPort;
     private final ImageDownloadPort imageDownloadPort;
+    private final ImageRepositoryPort imageRepositoryPort;
     private final VideoRepositoryPort videoRepositoryPort;
     private final CollectorProps properties;
     private final ParallelExecutor parallelExecutor;
@@ -79,7 +83,9 @@ public class ArticleCollectorService {
 
         List<ArticleLink> batch = new ArrayList<>();
 
-        batch.add(ArticleLink.builder().articleUrl("https://nypost.com/2026/06/04/business/techno-optimism-is-on-full-display-at-ny-tech-week/")
+        batch.add(ArticleLink.builder()
+                        .articleDate(LocalDate.EPOCH)
+                .articleUrl("https://nypost.com/2019/10/03/which-gleyber-torres-will-show-up-for-yankees-postseason/")
                 .build());
 //        while (!(batch = repositoryPort.findNewBatch(batchSize)).isEmpty()) {
 //        while (!(batch = repositoryPort.findNewBatch(batchSize)).isEmpty()) {
@@ -93,6 +99,7 @@ public class ArticleCollectorService {
         switch (articlePagePort.parse(link)) {
             case ParseResult.Ok ok -> {
                 repositoryPort.saveArticleAndMarkParsed(ok.article(), link.articleUrl());
+                saveImages(ok.images());
                 saveVideos(ok.videos());
                 log.info("[PARSED] {}", link.articleUrl());
             }
@@ -100,6 +107,17 @@ public class ArticleCollectorService {
                 repositoryPort.markError(link.articleUrl(), f.error().reason());
                 log.warn("[ERROR] {} | {}", link.articleUrl(), f.error().reason());
             }
+        }
+    }
+
+    private void saveImages(List<Image> images) {
+        for (Image image : images) {
+            if (imageRepositoryPort.existsByArticleIdAndImageUrl(image.articleId(), image.imageUrl())) {
+                log.debug("[IMAGE][SKIP] duplicate articleId={} imageUrl={}", image.articleId(), image.imageUrl());
+                continue;
+            }
+            imageRepositoryPort.save(image);
+            log.info("[IMAGE][SAVED] articleId={} position={}", image.articleId(), image.position());
         }
     }
 

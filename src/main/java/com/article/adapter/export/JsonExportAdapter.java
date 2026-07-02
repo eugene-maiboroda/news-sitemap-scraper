@@ -57,7 +57,7 @@ public class JsonExportAdapter implements ExportPort {
                 .author(a.author())
                 .authorLink(a.authorLink())
                 .imageId(ParseUtils.imageFilePrefix(a.category(), a.id()))
-                .imageCaption(a.caption())
+                // caption moved to Image (per-image now, not per-article) — exporter not yet rewired, see Image entity
                 .content(a.content())
                 .build();
     }

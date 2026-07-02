@@ -13,7 +13,12 @@ public class ParseUtils {
 
     public static final String EMPTY = "";
     private static final Pattern SRCSET_SPLIT = Pattern.compile("\\s*,\\s*(?=https?://)");
-    private static final Pattern WIDTH_PATTERN = Pattern.compile("w_(\\d+)");
+    // matches the HTML5 srcset width descriptor itself (e.g. "1024w"), not the URL —
+    // URL query schemes vary per site/CDN, but the descriptor format is a standard.
+    private static final Pattern WIDTH_DESCRIPTOR_PATTERN = Pattern.compile("(\\d+)w");
+
+    private static final int MIN_CONTENT_IMAGE_WIDTH = 300;
+    private static final int MIN_CONTENT_IMAGE_HEIGHT = 200;
 
     public static String getText(Element element) {
         return element.text().trim();
@@ -43,34 +48,64 @@ public class ParseUtils {
     public static List<String> getLinks(Elements elements) {
         List<String> links = new ArrayList<>();
         for (Element element : elements) {
-            String href = element.attr("abs:href");
-            if (href.isBlank()) {
-                href = element.attr("href");
+            if ("a".equals(element.tagName())) {
+                addLink(element, links);
+                continue;
             }
-            if (!href.isBlank()) {
-                links.add(href);
+
+            for (Element link : element.select("a[href]")) {
+                addLink(link, links);
             }
         }
+
         return links;
+    }
+
+    private static void addLink(Element element, List<String> links) {
+        String href = element.absUrl("href");
+        if (href.isBlank()) {
+            href = element.attr("href");
+        }
+
+        if (!href.isBlank()) {
+            links.add(href);
+        }
     }
 
     public static String extractBestImage(Elements elements) {
         List<ImageCandidate> candidates = new ArrayList<>();
         for (Element source : elements) {
-            String srcset = source.attr("srcset");
-            if (srcset.isBlank()) continue;
-            for (String part : SRCSET_SPLIT.split(srcset.trim())) {
-                String url = part.trim().split("\\s+")[0];
-                Integer width = extractWidth(url);
-                if (width != null) {
-                    candidates.add(new ImageCandidate(url, width));
-                }
-            }
+            candidates.addAll(parseSrcsetCandidates(source));
         }
         return candidates.stream()
                 .max(Comparator.comparingInt(ImageCandidate::width))
                 .map(ImageCandidate::url)
                 .orElse(EMPTY);
+    }
+
+    /**
+     * Universal heuristic for "is this a real article photo, not decorative/promo/related-post chrome" —
+     * no site-specific string checks (e.g. URL/class-name matching against one site's branding), just:
+     * <ol>
+     *   <li>wrapped in a {@code <figure>} — the standard convention (classic-editor captions and
+     *       Gutenberg's image block both use it) for an inserted content image; UI chrome like
+     *       related-post cards or theme banners typically isn't wrapped this way;</li>
+     *   <li>large enough to plausibly be a real photo rather than a thumbnail/icon/banner — using the
+     *       image's own declared {@code width}/{@code height} attributes when present, else the widest
+     *       {@code srcset} candidate as a proxy.</li>
+     * </ol>
+     */
+    public static boolean isLikelyContentImage(Element img) {
+        if (img.closest("figure") == null) {
+            return false;
+        }
+        Integer width = parsePositiveInt(img.attr("width"));
+        Integer height = parsePositiveInt(img.attr("height"));
+        if (width != null && height != null) {
+            return width >= MIN_CONTENT_IMAGE_WIDTH && height >= MIN_CONTENT_IMAGE_HEIGHT;
+        }
+        Integer widestSrcsetWidth = widestSrcsetWidth(img);
+        return widestSrcsetWidth != null && widestSrcsetWidth >= MIN_CONTENT_IMAGE_WIDTH;
     }
 
     public static String imageFilePrefix(String category, String id) {
@@ -79,9 +114,45 @@ public class ParseUtils {
         return prefix + "_" + id;
     }
 
-    private static Integer extractWidth(String url) {
-        Matcher m = WIDTH_PATTERN.matcher(url);
-        return m.find() ? Integer.parseInt(m.group(1)) : null;
+    private static Integer widestSrcsetWidth(Element img) {
+        return parseSrcsetCandidates(img).stream()
+                .map(ImageCandidate::width)
+                .max(Comparator.naturalOrder())
+                .orElse(null);
+    }
+
+    private static List<ImageCandidate> parseSrcsetCandidates(Element element) {
+        List<ImageCandidate> candidates = new ArrayList<>();
+        String srcset = element.attr("srcset");
+        if (srcset.isBlank()) {
+            return candidates;
+        }
+        for (String part : SRCSET_SPLIT.split(srcset.trim())) {
+            String[] tokens = part.trim().split("\\s+");
+            if (tokens.length < 2) continue;
+            Integer width = extractWidth(tokens[tokens.length - 1]);
+            if (width != null) {
+                candidates.add(new ImageCandidate(tokens[0], width));
+            }
+        }
+        return candidates;
+    }
+
+    private static Integer extractWidth(String descriptor) {
+        Matcher m = WIDTH_DESCRIPTOR_PATTERN.matcher(descriptor);
+        return m.matches() ? Integer.parseInt(m.group(1)) : null;
+    }
+
+    private static Integer parsePositiveInt(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            int parsed = Integer.parseInt(value.trim());
+            return parsed > 0 ? parsed : null;
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private record ImageCandidate(String url, int width) {}

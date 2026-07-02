@@ -1,8 +1,6 @@
 package com.article.adapter.http;
 
 import lombok.RequiredArgsConstructor;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
@@ -21,29 +19,22 @@ public class HttpContentLoader {
 
     @Retryable(includes = HttpClientErrorException.TooManyRequests.class, multiplier = 2)
     public String loadText(String url) {
+        return get(url, String.class);
+    }
+
+    @Retryable(includes = HttpClientErrorException.TooManyRequests.class, multiplier = 2)
+    public byte[] download(String url) {
+        return get(url, byte[].class);
+    }
+
+    private <T> T get(String url, Class<T> bodyType) {
         var request = restClient.get();
         httpHeadersProvider.defaultHeaders().forEach(request::header);
 
-        return execute(() -> request
-                .uri(url)
+        return execute(() -> request.uri(url)
                 .retrieve()
-                .body(String.class), url);
-    }
+                .body(bodyType), url);
 
-    public Document loadDocument(String url) {
-        String html = execute(() -> restClient.get()
-                .uri(url)
-                .retrieve()
-                .body(String.class), url);
-
-        return Jsoup.parse(html, url);
-    }
-
-    public byte[] download(String url) {
-        return execute(() -> restClient.get()
-                .uri(url)
-                .retrieve()
-                .body(byte[].class), url);
     }
 
     private <T> T execute(Supplier<T> supplier, String url) {

@@ -59,7 +59,7 @@ public class ConnatixVideoExtractor {
 
         byte[] mediaBin;
         try {
-            String mediaBinUrl = "https://vid.connatix.com/api/v1/%s/%s/2_media.bin".formatted(contentId, streamId);
+            String mediaBinUrl = "https://vid.connatix.com/%s/%s/2_media.bin".formatted(contentId, streamId);
             mediaBin = httpContentLoader.download(mediaBinUrl);
         } catch (Exception e) {
             log.warn("[CONNATIX] Failed to download 2_media.bin for {}: {}", articleUrl, e.getMessage());
