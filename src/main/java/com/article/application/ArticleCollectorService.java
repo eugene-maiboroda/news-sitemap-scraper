@@ -1,21 +1,13 @@
 package com.article.application;
 
-import com.article.domain.Article;
-import com.article.domain.ArticleImageRef;
-import com.article.domain.ArticleLink;
-import com.article.domain.ParseResult;
+import com.article.application.dto.ExportData;
+import com.article.domain.*;
 import com.article.bootstrap.CollectorProps;
-import com.article.port.ArticlePagePort;
-import com.article.port.ArticleRepositoryPort;
-import com.article.port.ExportPort;
-import com.article.port.ImageDownloadPort;
-import com.article.port.SitemapPort;
+import com.article.port.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -23,7 +15,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ArticleCollectorService {
 
-    private final ArticleRepositoryPort articleRepositoryPort;
+    private final ArticlePersistencePort articlePersistencePort;
+    private final VideoPersistencePort videoPersistencePort;
+    private final ImagePersistencePort imagePersistencePort;
     private final SitemapPort sitemapPort;
     private final ArticlePagePort articlePagePort;
     private final ExportPort exportPort;
@@ -59,7 +53,7 @@ public class ArticleCollectorService {
         for (String sitemapUrl : sitemapUrls) {
             try {
                 List<ArticleLink> links = sitemapPort.discoverLinks(sitemapUrl);
-                articleRepositoryPort.insertLinks(links);
+                articlePersistencePort.insertLinks(links);
                 log.info("Discovered {} links from {}", links.size(), sitemapUrl);
             } catch (Exception e) {
                 log.error("Failed to discover links from {}", sitemapUrl, e);
@@ -77,16 +71,15 @@ public class ArticleCollectorService {
         int threads = props.parseThreads();
         log.info("Parsing pages | batchSize={} threads={}", batchSize, threads);
 
-        List<ArticleLink> batch = new ArrayList<>();
+        List<ArticleLink> batch;
 
-        batch.add(ArticleLink.builder()
-                .articleDate(LocalDate.EPOCH)
-                .articleUrl("https://pagesix.com/2016/06/05/kardashians-ellen-degeneres-among-stars-affected-by-la-fire/")
-                .build());
-//        while (!(batch = articleRepositoryPort.findNewBatch(batchSize)).isEmpty()) {
+//        batch.add(ArticleLink.builder()
+//                .articleDate(LocalDate.EPOCH)
+//                .articleUrl("https://nypost.com/2024/02/11/lifestyle/dear-abby-im-gay-but-women-keep-coming-on-to-me/")
+//                .build());
+        while (!(batch = articlePersistencePort.findNewBatch(batchSize)).isEmpty()) {
             parallelExecutor.execute(batch, this::parseSingle);
-//        }
-        parseSingle(batch.getFirst());
+        }
         log.info("No more links to parse");
     }
 
@@ -94,13 +87,13 @@ public class ArticleCollectorService {
         long start = System.currentTimeMillis();
         switch (articlePagePort.parse(link)) {
             case ParseResult.Success success -> {
-                articleRepositoryPort.saveArticleAndMarkParsed(success.article(), link.articleUrl());
+                articlePersistencePort.saveArticleAndMarkParsed(success.article(), link.articleUrl());
                 parsedMediaService.saveImages(success.images());
                 parsedMediaService.saveVideos(success.videos());
                 log.info("[PARSED] {} ({} ms)", link.articleUrl(), System.currentTimeMillis() - start);
             }
             case ParseResult.Failure f -> {
-                articleRepositoryPort.markError(link.articleUrl(), f.error().reason());
+                articlePersistencePort.markError(link.articleUrl(), f.error().reason());
                 log.warn("[ERROR] {} | {} ({} ms)", link.articleUrl(), f.error().reason(), System.currentTimeMillis() - start);            }
         }
     }
@@ -110,7 +103,7 @@ public class ArticleCollectorService {
             return;
         }
         log.info("Step: DOWNLOAD IMAGES");
-        List<ArticleImageRef> imageRefs = articleRepositoryPort.findImageRefsForDelivery(props.imageBatchSize());
+        List<ArticleImageRef> imageRefs = articlePersistencePort.findImageRefsForDelivery(props.imageBatchSize());
         log.info("Downloading {} images", imageRefs.size());
         parallelExecutor.execute(imageRefs, imageDownloadPort::download);
         log.info("Download finished");
@@ -125,8 +118,12 @@ public class ArticleCollectorService {
             return;
         }
         log.info("Step: EXPORT JSON");
-        List<Article> articles = articleRepositoryPort.findAllArticles();
-        exportPort.export(articles);
+        List<Article> articles = articlePersistencePort.findAllArticles();
+        List<Image> images = imagePersistencePort.findAllImages();
+        List<Video> videos = videoPersistencePort.findAllVideos();
+
+        ExportData data = new ExportData(articles, images, videos);
+        exportPort.export(data);
         log.info("Export finished");
     }
 }

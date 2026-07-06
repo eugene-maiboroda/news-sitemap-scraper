@@ -3,15 +3,15 @@ package com.article;
 import com.article.domain.Article;
 import com.article.domain.ArticleImageRef;
 import com.article.domain.ArticleLink;
-import com.article.port.ArticleRepositoryPort;
+import com.article.port.ArticlePersistencePort;
 
 import java.util.List;
 
-public class FakeArticleRepository implements ArticleRepositoryPort {
+public class FakeArticlePersistence implements ArticlePersistencePort {
 
     private final List<ArticleLink> links;
 
-    public FakeArticleRepository(List<ArticleLink> links) {
+    public FakeArticlePersistence(List<ArticleLink> links) {
         this.links = links;
     }
 

@@ -6,7 +6,7 @@ import com.article.domain.ArticleLink;
 
 import java.util.List;
 
-public interface ArticleRepositoryPort {
+public interface ArticlePersistencePort {
 
     void insertLinks(List<ArticleLink> links);
 

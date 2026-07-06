@@ -16,7 +16,15 @@ interface ArticleRepository extends JpaRepository<ArticleEntity, String> {
     // ArticleEntity no longer has imageUrl (moved to the separate `image` table/Image entity) —
     // kept as a structural no-op so ImageDownloadPort/ImageDownloadAdapter still compile and boot;
     // they'll be rewired to the new Image entity in a later phase.
-    @Query("SELECT new com.article.domain.ArticleImageRef(a.id, a.category, '') " +
-           "FROM ArticleEntity a WHERE a.id IS NULL ORDER BY a.publishDate DESC")
+    @Query("SELECT new com.article.domain.ArticleImageRef(\n" +
+            "    a.id,\n" +
+            "    a.category,\n" +
+            "    i.imageUrl,\n" +
+            "    i.position\n" +
+            ")\n" +
+            "FROM ImageEntity i\n" +
+            "JOIN ArticleEntity a\n" +
+            "ON a.id = i.articleId\n" +
+            "WHERE i.downloadStatus = 'PENDING'")
     List<ArticleImageRef> findImageRefsForDelivery(Pageable pageable);
 }

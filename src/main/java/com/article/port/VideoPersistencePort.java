@@ -2,7 +2,9 @@ package com.article.port;
 
 import com.article.domain.Video;
 
-public interface VideoRepositoryPort {
+import java.util.List;
+
+public interface VideoPersistencePort {
 
     void save(Video video);
 
@@ -11,4 +13,6 @@ public interface VideoRepositoryPort {
     boolean existsByArticleIdAndConnatixMmid(String articleId, String connatixMmid);
 
     boolean existsByArticleIdAndYoutubeVideoId(String articleId, String youtubeVideoId);
+
+    List<Video> findAllVideos();
 }

@@ -5,7 +5,7 @@ import com.article.domain.Article;
 import com.article.domain.ArticleImageRef;
 import com.article.domain.ArticleLink;
 import com.article.domain.status.CrawlStatus;
-import com.article.port.ArticleRepositoryPort;
+import com.article.port.ArticlePersistencePort;
 import com.article.port.IdGenerationPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ArticlePersistenceService implements ArticleRepositoryPort {
+public class ArticlePersistenceService implements ArticlePersistencePort {
 
     private static final String BULK_INSERT_SQL = """
             INSERT INTO article_links (id, article_url, article_date, status)

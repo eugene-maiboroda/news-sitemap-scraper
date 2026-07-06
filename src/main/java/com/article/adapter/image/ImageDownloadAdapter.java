@@ -24,7 +24,7 @@ public class ImageDownloadAdapter implements ImageDownloadPort {
     public void download(ArticleImageRef ref) {
         try {
             Path dir = Path.of(collectorProps.imagesDir());
-            String fileName = ParseUtils.imageFilePrefix(ref.category(), ref.id()) + resolveExtension(ref.imageUrl());
+            String fileName = ParseUtils.imageFilePrefix(ref.category(), ref.articleId(), ref.position()) + resolveExtension(ref.imageUrl());
             Path target = dir.resolve(fileName);
 
             if (Files.exists(target)) {
@@ -36,14 +36,14 @@ public class ImageDownloadAdapter implements ImageDownloadPort {
             byte[] bytes = contentLoader.download(ref.imageUrl());
 
             if (bytes == null || bytes.length == 0) {
-                log.warn("[IMAGE][EMPTY] id={} url={}", ref.id(), ref.imageUrl());
+                log.warn("[IMAGE][EMPTY] id={} url={}", ref.articleId(), ref.imageUrl());
                 return;
             }
 
             Files.write(target, bytes);
             log.info("[IMAGE][OK] {} ({} bytes)", fileName, bytes.length);
         } catch (Exception e) {
-            log.warn("[IMAGE][FAIL] id={} url={}", ref.id(), ref.imageUrl(), e);
+            log.warn("[IMAGE][FAIL] id={} url={}", ref.articleId(), ref.imageUrl(), e);
         }
     }
 

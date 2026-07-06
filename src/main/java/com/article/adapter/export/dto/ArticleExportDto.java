@@ -1,8 +1,11 @@
 package com.article.adapter.export.dto;
 
+import com.article.domain.Image;
+import com.article.domain.Video;
 import lombok.Builder;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Builder
 public record ArticleExportDto(
@@ -14,7 +17,8 @@ public record ArticleExportDto(
         LocalDate publishedDate,
         String author,
         String authorLink,
-        String imageId,
+        List<String> images,
+        List<String> videos,
         String imageCaption,
         String content
 ) {}

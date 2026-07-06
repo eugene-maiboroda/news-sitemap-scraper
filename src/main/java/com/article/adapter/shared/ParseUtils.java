@@ -128,10 +128,19 @@ public class ParseUtils {
         return m.find() ? Optional.of(m.group(1)) : Optional.empty();
     }
 
-    public static String imageFilePrefix(String category, String id) {
-        String prefix = (category == null || category.isBlank()) ? "unknown" :
-                category.toLowerCase().replaceAll("\\s+", "_");
-        return prefix + "_" + id;
+    public static String categorySlug(String category) {
+        return (category == null || category.isBlank())
+                ? "uncategorized"
+                : category.toLowerCase()
+                .replaceAll("[^a-z0-9]+", "_")
+                .replaceAll("^_+|_+$", "");
+    }
+
+    public static String imageFilePrefix(String category, String articleId, Integer position) {
+        return categorySlug(category) + "_" + articleId + "_img_" + position;
+    }
+    public static String videoFilePrefix(String category, String articleId, String platform, String videoId) {
+        return categorySlug(category) + "_" + articleId + "_video_" + platform.toLowerCase() + "_" + videoId;
     }
 
     private static boolean hasWpImageClass(Element img) {

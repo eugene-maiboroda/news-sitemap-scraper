@@ -3,13 +3,15 @@ package com.article.adapter.video.persistence;
 import com.article.adapter.video.mapper.VideoMapper;
 import com.article.domain.Video;
 import com.article.port.IdGenerationPort;
-import com.article.port.VideoRepositoryPort;
+import com.article.port.VideoPersistencePort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
-public class VideoPersistenceService implements VideoRepositoryPort {
+public class VideoPersistenceService implements VideoPersistencePort {
 
     private final VideoRepository videoRepository;
     private final VideoMapper videoMapper;
@@ -34,5 +36,12 @@ public class VideoPersistenceService implements VideoRepositoryPort {
     @Override
     public boolean existsByArticleIdAndYoutubeVideoId(String articleId, String youtubeVideoId) {
         return videoRepository.existsByArticleIdAndYoutubeVideoId(articleId, youtubeVideoId);
+    }
+
+    @Override
+    public List<Video> findAllVideos() {
+        return videoRepository.findAll().stream()
+                .map(videoMapper::toVideo)
+                .toList();
     }
 }
