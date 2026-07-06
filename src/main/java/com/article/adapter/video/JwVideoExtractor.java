@@ -1,8 +1,8 @@
 package com.article.adapter.video;
 
-import com.article.domain.DownloadStatus;
+import com.article.domain.status.DownloadStatus;
 import com.article.domain.Video;
-import com.article.domain.VideoPlatform;
+import com.article.domain.status.VideoPlatform;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;

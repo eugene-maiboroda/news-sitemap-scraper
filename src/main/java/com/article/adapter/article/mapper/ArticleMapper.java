@@ -10,14 +10,9 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import java.util.List;
-import java.util.UUID;
 
 @Mapper(config = MapStructConfig.class)
 public interface ArticleMapper {
-
-    default String generateId() {
-        return UUID.randomUUID().toString();
-    }
 
     @BeanMapping(ignoreUnmappedSourceProperties = {"createdAt"})
     Article toArticle(ArticleEntity entity);
@@ -31,9 +26,4 @@ public interface ArticleMapper {
     ArticleLink toArticleLink(LinkArticleEntity entity);
 
     List<ArticleLink> toArticleLinks(List<LinkArticleEntity> entities);
-
-    @Mapping(target = "id", expression = "java(generateId())")
-    @Mapping(target = "status", expression = "java(com.article.domain.CrawlStatus.NEW)")
-    @Mapping(target = "errorMessage", ignore = true)
-    LinkArticleEntity toLinkEntity(ArticleLink link);
 }

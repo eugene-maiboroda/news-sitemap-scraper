@@ -31,16 +31,6 @@ public class ParallelExecutor {
             Thread.currentThread().interrupt();
         } catch (ExecutionException e) {
             log.error("Unexpected execution error", e);
-        } finally {
-            shutdownExecutor(executor);
-            try {
-                if (!executor.awaitTermination(2, TimeUnit.HOURS)) {
-                    executor.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                executor.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
         }
     }
 

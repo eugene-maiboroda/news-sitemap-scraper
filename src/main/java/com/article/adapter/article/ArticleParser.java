@@ -4,10 +4,11 @@ import com.article.adapter.http.HttpContentLoader;
 import com.article.adapter.shared.ParseUtils;
 import com.article.adapter.video.ConnatixVideoExtractor;
 import com.article.adapter.video.JwVideoExtractor;
+import com.article.adapter.video.YoutubeVideoExtractor;
 import com.article.bootstrap.CollectorProps;
 import com.article.domain.Article;
 import com.article.domain.ArticleLink;
-import com.article.domain.DownloadStatus;
+import com.article.domain.status.DownloadStatus;
 import com.article.domain.Image;
 import com.article.domain.ParseResult;
 import com.article.domain.Video;
@@ -18,6 +19,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpStatusCodeException;
 
@@ -27,7 +29,12 @@ import java.security.NoSuchAlgorithmException;
 
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+import static com.article.adapter.shared.ParseUtils.*;
 
 @Slf4j
 @Component
@@ -36,18 +43,21 @@ public class ArticleParser implements ArticlePagePort {
 
     private static final String CATEGORY_SELECTOR = ".article-header__top span";
     private static final String TITLE_SELECTOR = ".article-header h1";
-    private static final String SUB_TITLE_SELECTOR = "";
-    private static final String AUTHOR_SELECTOR = ".article-header .byline__author";
     private static final String CONTENT_SELECTOR = ".entry-content";
-//    private static final String CONTENT_SELECTOR = "single__content";
+    private static final String ARTICLE_SELECTOR = "article";
 
-    private static final String IMAGES_SELECTOR = ".single__content.entry-content img";
+    // both are common WordPress theme conventions (not single-article guesses): the featured/header
+    // image lives in a separate container from the inline body content, so both need covering.
+    private static final String IMAGES_SELECTOR = ".entry-content img, .featured-image img";
     private static final String ALT_CONTENT_IMAGES_SELECTOR = "figure img";
+    private static final String AUTHOR_SELECTOR = ".article-header .byline__author";
 
+    //    private static final String SUB_TITLE_SELECTOR = "";
     //    private static final String DATE_SELECTOR = "#main-article div:has(.underline) time";
     private final HttpContentLoader contentLoader;
     private final JwVideoExtractor jwVideoExtractor;
-    private final ConnatixVideoExtractor connatixVideoExtractor;
+    private final ObjectProvider<ConnatixVideoExtractor> connatixVideoExtractor;
+    private final YoutubeVideoExtractor youtubeVideoExtractor;
     private final CollectorProps collectorProps;
 
     @Override
@@ -56,27 +66,44 @@ public class ArticleParser implements ArticlePagePort {
         try {
            String html = contentLoader.loadText(url);
             Document doc = Jsoup.parse(html, url);
+            Element articleEl = doc.select(ARTICLE_SELECTOR).first();
+            clearMarketing(articleEl);
             String articleId = idFromUrl(url);
+
+            String title = getText(doc.select(TITLE_SELECTOR));
+            String content = doc.select(CONTENT_SELECTOR).html();
+
+            if (title.isBlank()) {
+                log.warn("[PARSE] Missing title: {}", url);
+                return ParseResult.error(url, "Missing title");
+            }
+
+            if (content.isBlank()) {
+                log.warn("[PARSE] Missing content: {}", url);
+                return ParseResult.error(url, "Missing content");
+            }
 
             Article article = Article.builder()
                     .id(articleId)
-                    .category(ParseUtils.getText(doc.select(CATEGORY_SELECTOR)))
+                    .category(getText(doc.select(CATEGORY_SELECTOR)))
                     .url(url)
                     .publishDate(link.articleDate())
-                    .title(ParseUtils.getText(doc.select(TITLE_SELECTOR)))
-                    .subTitle("Test")
-                    .author(ParseUtils.getText(doc.select(AUTHOR_SELECTOR).eq(0)))
-                    .authorLink(ParseUtils.getFirstLink(doc.select(AUTHOR_SELECTOR).eq(0)))
-                    .content(doc.select(CONTENT_SELECTOR).html())
-                    .rawHtml(html)
+                    .title(title)
+                    .subTitle(EMPTY)
+                    .author(getText(doc.select(AUTHOR_SELECTOR).eq(0)))
+                    .authorLink(getFirstLink(doc.select(AUTHOR_SELECTOR).eq(0)))
+                    .content(content)
+                    .rawHtml(articleEl != null ? articleEl.outerHtml() : html)
                     .build();
 
             List<Image> images = extractImages(doc, articleId);
 
             List<Video> videos = new ArrayList<>();
             jwVideoExtractor.extract(doc, articleId, url).ifPresent(videos::add);
+            youtubeVideoExtractor.extract(doc, articleId, url).ifPresent(videos::add);
             if (collectorProps.steps().extractConnatixVideos()) {
-                connatixVideoExtractor.extract(articleId, url).ifPresent(videos::add);
+                connatixVideoExtractor.ifAvailable(extractor
+                        -> extractor.extract(articleId, url).ifPresent(videos::add));
             }
 
             return ParseResult.ok(article, images, videos);
@@ -125,9 +152,27 @@ public class ArticleParser implements ArticlePagePort {
     }
 
     private List<Element> contentImages(Document doc, String selector) {
-        return doc.select(selector).stream()
+        List<Element> candidates = doc.select(selector).stream()
                 .filter(ParseUtils::isLikelyContentImage)
                 .toList();
+        return dedupByWpImageId(candidates);
+    }
+
+    /**
+     * Some articles legitimately repeat the same media-library photo twice within the same content
+     * container (e.g. an inline lightbox mirror). Keep one element per WordPress attachment id, the
+     * first in document order; images without that class (no grouping key available) are always kept.
+     */
+    private List<Element> dedupByWpImageId(List<Element> candidates) {
+        List<Element> deduped = new ArrayList<>();
+        Set<String> seenIds = new HashSet<>();
+        for (Element img : candidates) {
+            Optional<String> id = ParseUtils.wpImageId(img);
+            if (id.isEmpty() || seenIds.add(id.get())) {
+                deduped.add(img);
+            }
+        }
+        return deduped;
     }
 
     private String extractCaption(Element img) {
@@ -136,7 +181,7 @@ public class ArticleParser implements ArticlePagePort {
             return null;
         }
         Element figcaption = figure.selectFirst("figcaption");
-        return figcaption != null ? ParseUtils.getText(figcaption) : null;
+        return figcaption != null ? getText(figcaption) : null;
     }
 
     static String idFromUrl(String url) {

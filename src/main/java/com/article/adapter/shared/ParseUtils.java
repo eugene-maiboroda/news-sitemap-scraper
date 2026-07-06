@@ -6,6 +6,7 @@ import org.jsoup.select.Elements;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,6 +17,10 @@ public class ParseUtils {
     // matches the HTML5 srcset width descriptor itself (e.g. "1024w"), not the URL —
     // URL query schemes vary per site/CDN, but the descriptor format is a standard.
     private static final Pattern WIDTH_DESCRIPTOR_PATTERN = Pattern.compile("(\\d+)w");
+    // WordPress core's own marker for "this <img> came from the media library, inserted into
+    // post content" — added automatically regardless of theme, unlike template-generated
+    // thumbnails/widgets (related posts, shop promos, columnist avatars), which never carry it.
+    private static final Pattern WP_IMAGE_ID = Pattern.compile("wp-image-(\\d+)");
 
     private static final int MIN_CONTENT_IMAGE_WIDTH = 300;
     private static final int MIN_CONTENT_IMAGE_HEIGHT = 200;
@@ -26,6 +31,16 @@ public class ParseUtils {
 
     public static String getText(Elements elements) {
         return elements != null ? elements.text().trim() : EMPTY;
+    }
+
+    public static void clearMarketing(Element el) {
+        if (el == null || el.html().isBlank()) {
+            return;
+        }
+        el.select("script").remove();
+        el.select("style").remove();
+        el.select("noscript").remove();
+
     }
 
     public static String getImageSrc(Elements elements) {
@@ -42,7 +57,7 @@ public class ParseUtils {
 
     public static String getFirstLink(Elements elements) {
         List<String> links = getLinks(elements);
-        return links.isEmpty() ? EMPTY : links.get(0);
+        return links.isEmpty() ? EMPTY : links.getFirst();
     }
 
     public static List<String> getLinks(Elements elements) {
@@ -85,20 +100,45 @@ public class ParseUtils {
 
     /**
      * Universal heuristic for "is this a real article photo, not decorative/promo/related-post chrome" —
-     * no site-specific string checks (e.g. URL/class-name matching against one site's branding), just:
+     * no site-specific string checks (e.g. URL/class-name matching against one site's branding):
      * <ol>
-     *   <li>wrapped in a {@code <figure>} — the standard convention (classic-editor captions and
-     *       Gutenberg's image block both use it) for an inserted content image; UI chrome like
-     *       related-post cards or theme banners typically isn't wrapped this way;</li>
      *   <li>large enough to plausibly be a real photo rather than a thumbnail/icon/banner — using the
      *       image's own declared {@code width}/{@code height} attributes when present, else the widest
-     *       {@code srcset} candidate as a proxy.</li>
+     *       {@code srcset} candidate as a proxy; checked unconditionally, since neither signal below is
+     *       reliable on its own for small promo/badge images;</li>
+     *   <li>then either: WordPress core's own {@code wp-image-<id>} class (added to any content image
+     *       inserted from the media library, regardless of theme), or</li>
+     *   <li>wrapped in a {@code <figure>} — the standard convention (classic-editor captions and
+     *       Gutenberg's image block both use it) for an inserted content image without that class.</li>
      * </ol>
      */
     public static boolean isLikelyContentImage(Element img) {
-        if (img.closest("figure") == null) {
+        if (!meetsMinimumSize(img)) {
             return false;
         }
+        if (hasWpImageClass(img)) {
+            return true;
+        }
+        return img.closest("figure") != null;
+    }
+
+    /** The numeric WordPress media-library attachment id, if this image carries a {@code wp-image-<id>} class. */
+    public static Optional<String> wpImageId(Element img) {
+        Matcher m = WP_IMAGE_ID.matcher(img.attr("class"));
+        return m.find() ? Optional.of(m.group(1)) : Optional.empty();
+    }
+
+    public static String imageFilePrefix(String category, String id) {
+        String prefix = (category == null || category.isBlank()) ? "unknown" :
+                category.toLowerCase().replaceAll("\\s+", "_");
+        return prefix + "_" + id;
+    }
+
+    private static boolean hasWpImageClass(Element img) {
+        return wpImageId(img).isPresent();
+    }
+
+    private static boolean meetsMinimumSize(Element img) {
         Integer width = parsePositiveInt(img.attr("width"));
         Integer height = parsePositiveInt(img.attr("height"));
         if (width != null && height != null) {
@@ -106,12 +146,6 @@ public class ParseUtils {
         }
         Integer widestSrcsetWidth = widestSrcsetWidth(img);
         return widestSrcsetWidth != null && widestSrcsetWidth >= MIN_CONTENT_IMAGE_WIDTH;
-    }
-
-    public static String imageFilePrefix(String category, String id) {
-        String prefix = (category == null || category.isBlank()) ? "unknown" :
-                category.toLowerCase().replaceAll("\\s+", "_");
-        return prefix + "_" + id;
     }
 
     private static Integer widestSrcsetWidth(Element img) {
@@ -154,6 +188,8 @@ public class ParseUtils {
             return null;
         }
     }
+
+
 
     private record ImageCandidate(String url, int width) {}
 }

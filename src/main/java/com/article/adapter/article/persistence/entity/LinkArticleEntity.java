@@ -1,6 +1,6 @@
 package com.article.adapter.article.persistence.entity;
 
-import com.article.domain.CrawlStatus;
+import com.article.domain.status.CrawlStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

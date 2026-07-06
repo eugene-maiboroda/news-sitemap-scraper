@@ -1,7 +1,7 @@
 package com.article.adapter.article.persistence;
 
 import com.article.adapter.article.persistence.entity.LinkArticleEntity;
-import com.article.domain.CrawlStatus;
+import com.article.domain.status.CrawlStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

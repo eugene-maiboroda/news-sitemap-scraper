@@ -10,7 +10,7 @@ public record CollectorProps(
         int parseBatchSize,
         int parseThreads,
         int imageThreads,
-        int deliveryLimit,
+        int imageBatchSize,
         String exportDir,
         String imagesDir,
         List<String> sitemapUrls

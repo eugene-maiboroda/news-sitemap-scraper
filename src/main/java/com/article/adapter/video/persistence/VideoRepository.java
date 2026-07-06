@@ -8,4 +8,6 @@ interface VideoRepository extends JpaRepository<VideoEntity, String> {
     boolean existsByArticleIdAndJwMediaId(String articleId, String jwMediaId);
 
     boolean existsByArticleIdAndConnatixMmid(String articleId, String connatixMmid);
+
+    boolean existsByArticleIdAndYoutubeVideoId(String articleId, String youtubeVideoId);
 }

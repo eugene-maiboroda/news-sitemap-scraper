@@ -13,7 +13,7 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class SitemapAdapter implements SitemapPort {
+public class SitemapService implements SitemapPort {
 
     private final HttpContentLoader contentLoader;
     private final NyPostYearSitemapParser yearSitemapParser;

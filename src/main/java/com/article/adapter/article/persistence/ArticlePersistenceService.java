@@ -4,8 +4,9 @@ import com.article.adapter.article.mapper.ArticleMapper;
 import com.article.domain.Article;
 import com.article.domain.ArticleImageRef;
 import com.article.domain.ArticleLink;
-import com.article.domain.CrawlStatus;
+import com.article.domain.status.CrawlStatus;
 import com.article.port.ArticleRepositoryPort;
+import com.article.port.IdGenerationPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -14,12 +15,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ArticleRepositoryService implements ArticleRepositoryPort {
+public class ArticlePersistenceService implements ArticleRepositoryPort {
 
     private static final String BULK_INSERT_SQL = """
             INSERT INTO article_links (id, article_url, article_date, status)
@@ -31,13 +31,14 @@ public class ArticleRepositoryService implements ArticleRepositoryPort {
     private final ArticleRepository articleRepository;
     private final ArticleMapper articleMapper;
     private final JdbcTemplate jdbcTemplate;
+    private final IdGenerationPort idGenerationPort;
 
     @Override
     @Transactional
     public void insertLinks(List<ArticleLink> links) {
         long start = System.currentTimeMillis();
         jdbcTemplate.batchUpdate(BULK_INSERT_SQL, links, 1000, (ps, link) -> {
-            ps.setString(1, UUID.randomUUID().toString());
+            ps.setString(1, idGenerationPort.generateId());
             ps.setString(2, link.articleUrl());
             ps.setObject(3, link.articleDate());
         });

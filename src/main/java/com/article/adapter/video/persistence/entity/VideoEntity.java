@@ -1,7 +1,7 @@
 package com.article.adapter.video.persistence.entity;
 
-import com.article.domain.DownloadStatus;
-import com.article.domain.VideoPlatform;
+import com.article.domain.status.DownloadStatus;
+import com.article.domain.status.VideoPlatform;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -73,6 +73,9 @@ public class VideoEntity {
 
     @Column(name = "connatix_mmid")
     private String connatixMmid;
+
+    @Column(name = "youtube_video_id")
+    private String youtubeVideoId;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

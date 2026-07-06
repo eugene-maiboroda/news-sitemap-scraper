@@ -1,6 +1,6 @@
 package com.article.adapter.image.persistence.entity;
 
-import com.article.domain.DownloadStatus;
+import com.article.domain.status.DownloadStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

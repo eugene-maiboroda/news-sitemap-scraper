@@ -1,4 +1,4 @@
-package com.article.adapter.browser;
+package com.article.adapter.http.browser;
 
 import com.article.bootstrap.BrowserProps;
 import com.article.port.BrowserPort;
@@ -10,6 +10,7 @@ import com.microsoft.playwright.Response;
 import com.microsoft.playwright.options.WaitUntilState;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.Optional;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@ConditionalOnProperty(prefix = "browser", name = "enabled", havingValue = "true")
 public class PlaywrightBrowserAdapter implements BrowserPort {
 
     private final Browser browser;

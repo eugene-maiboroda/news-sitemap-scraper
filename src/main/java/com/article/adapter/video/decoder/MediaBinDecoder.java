@@ -1,4 +1,4 @@
-package com.article.adapter.video;
+package com.article.adapter.video.decoder;
 
 // Auto-generated from research5_proto_schema.py
 import java.nio.charset.StandardCharsets;

@@ -4,12 +4,12 @@ import java.util.List;
 
 public sealed interface ParseResult {
 
-    record Ok(Article article, List<Image> images, List<Video> videos) implements ParseResult {}
+    record Success(Article article, List<Image> images, List<Video> videos) implements ParseResult {}
 
     record Failure(ContentError error) implements ParseResult {}
 
     static ParseResult ok(Article article, List<Image> images, List<Video> videos) {
-        return new Ok(article, images, videos);
+        return new Success(article, images, videos);
     }
 
     static ParseResult error(String url, String reason) {

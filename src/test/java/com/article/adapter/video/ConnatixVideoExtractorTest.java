@@ -1,9 +1,9 @@
 package com.article.adapter.video;
 
 import com.article.adapter.http.HttpContentLoader;
-import com.article.domain.DownloadStatus;
+import com.article.domain.status.DownloadStatus;
 import com.article.domain.Video;
-import com.article.domain.VideoPlatform;
+import com.article.domain.status.VideoPlatform;
 import com.article.port.BrowserPort;
 import org.junit.jupiter.api.Test;
 
@@ -72,13 +72,13 @@ class ConnatixVideoExtractorTest {
 
         assertTrue(result.isPresent());
         Video video = result.get();
-        assertEquals(VideoPlatform.CONNATIX_BOTTOM, video.platform());
-        assertEquals("article-id-1", video.articleId());
-        assertEquals(contentId, video.connatixContentId());
-        assertEquals(streamId, video.connatixStreamId());
-        assertEquals(mmid, video.connatixMmid());
-        assertEquals("https://vid.connatix.com/%s/%s/mmid-%s/playlist.m3u8".formatted(contentId, streamId, mmid), video.m3u8Url());
-        assertEquals(DownloadStatus.PENDING, video.downloadStatus());
+        assertEquals(VideoPlatform.CONNATIX_BOTTOM, video.getPlatform());
+        assertEquals("article-id-1", video.getArticleId());
+        assertEquals(contentId, video.getConnatixContentId());
+        assertEquals(streamId, video.getConnatixStreamId());
+        assertEquals(mmid, video.getConnatixMmid());
+        assertEquals("https://vid.connatix.com/%s/%s/mmid-%s/playlist.m3u8".formatted(contentId, streamId, mmid), video.getM3u8Url());
+        assertEquals(DownloadStatus.PENDING, video.getDownloadStatus());
         // exact endpoint per the verified Python reference — no "/api/v1/" prefix, that variant 403s
         verify(httpContentLoader).download("https://vid.connatix.com/%s/%s/2_media.bin".formatted(contentId, streamId));
     }

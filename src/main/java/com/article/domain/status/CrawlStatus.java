@@ -1,4 +1,4 @@
-package com.article.domain;
+package com.article.domain.status;
 
 public enum CrawlStatus {
     NEW,

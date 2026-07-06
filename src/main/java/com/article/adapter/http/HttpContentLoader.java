@@ -1,6 +1,8 @@
 package com.article.adapter.http;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
@@ -12,6 +14,7 @@ import java.util.function.Supplier;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class HttpContentLoader {
 
     private final RestClient restClient;
@@ -30,6 +33,13 @@ public class HttpContentLoader {
     private <T> T get(String url, Class<T> bodyType) {
         var request = restClient.get();
         httpHeadersProvider.defaultHeaders().forEach(request::header);
+
+        ResponseEntity<String> response = restClient.get()
+                .uri(url)
+                .retrieve()
+                .toEntity(String.class);
+
+        log.info("{} -> {}", url, response.getStatusCode());
 
         return execute(() -> request.uri(url)
                 .retrieve()

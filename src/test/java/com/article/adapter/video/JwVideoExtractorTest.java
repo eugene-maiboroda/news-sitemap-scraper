@@ -42,14 +42,14 @@ class JwVideoExtractorTest {
 
         assertTrue(result.isPresent());
         Video video = result.get();
-        assertEquals("x6zqbaOP", video.jwMediaId());
-        assertEquals("https://cdn.jwplayer.com/manifests/x6zqbaOP.m3u8", video.m3u8Url());
-        assertEquals("Test Video Title", video.title());
-        assertEquals("Test video description", video.description());
-        assertEquals("https://example.com/thumb.jpg", video.thumbnailUrl());
-        assertEquals(155, video.durationSeconds());
-        assertEquals(OffsetDateTime.parse("2026-06-26T10:00:00-04:00").toInstant(), video.publishedAt());
-        assertEquals("abc123456", video.articleId());
+        assertEquals("x6zqbaOP", video.getJwMediaId());
+        assertEquals("https://cdn.jwplayer.com/manifests/x6zqbaOP.m3u8", video.getM3u8Url());
+        assertEquals("Test Video Title", video.getTitle());
+        assertEquals("Test video description", video.getDescription());
+        assertEquals("https://example.com/thumb.jpg", video.getThumbnailUrl());
+        assertEquals(155, video.getDurationSeconds());
+        assertEquals(OffsetDateTime.parse("2026-06-26T10:00:00-04:00").toInstant(), video.getPublishedAt());
+        assertEquals("abc123456", video.getArticleId());
     }
 
     @Test
@@ -95,11 +95,11 @@ class JwVideoExtractorTest {
 
         assertTrue(result.isPresent());
         Video video = result.get();
-        assertEquals("yuSZSPmT", video.jwMediaId());
-        assertEquals("https://cdn.jwplayer.com/manifests/yuSZSPmT.m3u8", video.m3u8Url());
-        assertEquals("Can Yankees continue dominance of Twins in ALDS?", video.title());
-        assertEquals(320, video.durationSeconds());
-        assertEquals("abc123456", video.articleId());
+        assertEquals("yuSZSPmT", video.getJwMediaId());
+        assertEquals("https://cdn.jwplayer.com/manifests/yuSZSPmT.m3u8", video.getM3u8Url());
+        assertEquals("Can Yankees continue dominance of Twins in ALDS?", video.getTitle());
+        assertEquals(320, video.getDurationSeconds());
+        assertEquals("abc123456", video.getArticleId());
     }
 
     @Test

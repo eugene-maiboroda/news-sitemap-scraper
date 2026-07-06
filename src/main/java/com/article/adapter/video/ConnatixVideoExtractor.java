@@ -1,12 +1,14 @@
 package com.article.adapter.video;
 
 import com.article.adapter.http.HttpContentLoader;
-import com.article.domain.DownloadStatus;
+import com.article.adapter.video.decoder.MediaBinDecoder;
+import com.article.domain.status.DownloadStatus;
 import com.article.domain.Video;
-import com.article.domain.VideoPlatform;
+import com.article.domain.status.VideoPlatform;
 import com.article.port.BrowserPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -26,6 +28,7 @@ import java.util.regex.Pattern;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@ConditionalOnProperty(prefix = "browser", name = "enabled", havingValue = "true")
 public class ConnatixVideoExtractor {
 
     private static final String PLS_URL_CONTAINS = "capi.connatix.com/core/pls";
