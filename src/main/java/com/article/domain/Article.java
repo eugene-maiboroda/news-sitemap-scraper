@@ -14,6 +14,5 @@ public record Article(
         String subTitle,
         String author,
         String authorLink,
-        String content,
-        String rawHtml
+        String content
 ) {}

@@ -1,7 +1,6 @@
 package com.article.port;
 
 import com.article.domain.Article;
-import com.article.domain.ArticleImageRef;
 import com.article.domain.ArticleLink;
 
 import java.util.List;
@@ -16,7 +15,9 @@ public interface ArticlePersistencePort {
 
     void markError(String articleUrl, String errorMessage);
 
-    List<Article> findAllArticles();
+    List<String> findDistinctCategories();
 
-    List<ArticleImageRef> findImageRefsForDelivery(int limit);
+    List<Article> findArticlesByCategory(String category, int page, int pageSize);
+
+    List<Article> findArticlesWithoutCategory(int page, int pageSize);
 }

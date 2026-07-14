@@ -1,7 +1,12 @@
 package com.article.application;
 
+import com.article.adapter.article.MainCategoryResolver;
+import com.article.adapter.article.TopicsTagsExtractor;
+import com.article.adapter.export.dto.LinkDto;
 import com.article.application.dto.ExportData;
+import com.article.application.dto.TopicExportContext;
 import com.article.domain.*;
+import com.article.domain.status.DownloadStatus;
 import com.article.bootstrap.CollectorProps;
 import com.article.port.*;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 @Slf4j
 @Service
@@ -16,21 +23,27 @@ import java.util.List;
 public class ArticleCollectorService {
 
     private final ArticlePersistencePort articlePersistencePort;
+    private final ArticleHtmlPersistencePort articleHtmlPersistencePort;
     private final VideoPersistencePort videoPersistencePort;
     private final ImagePersistencePort imagePersistencePort;
     private final SitemapPort sitemapPort;
     private final ArticlePagePort articlePagePort;
     private final ExportPort exportPort;
     private final ImageDownloadPort imageDownloadPort;
+    private final VideoDownloadPort videoDownloadPort;
     private final CollectorProps props;
     private final ParallelExecutor parallelExecutor;
     private final ParsedMediaService parsedMediaService;
+    private final TopicsTagsExtractor topicsTagsExtractor;
+    private final ArticleTopicsPersistencePort articleTopicsPersistencePort;
+    private final MainCategoryResolver mainCategoryResolver;
 
     public void run() {
         discoverLinks();
         parsePages();
+        extractTopics();
         downloadImages();
-//        downloadVideo();
+        downloadVideo();
         exportJson();
 
         log.info("NYPost Article Collector finished");
@@ -98,32 +111,217 @@ public class ArticleCollectorService {
         }
     }
 
+    private void extractTopics() {
+        if (!props.steps().extractTopics()) {
+            return;
+        }
+        log.info("Step: EXTRACT TOPICS");
+        int batchSize = props.parseBatchSize();
+        int batchNumber = 0;
+        int processed = 0;
+        AtomicInteger topicOverflowCount = new AtomicInteger();
+        List<ArticleRawHtml> batch;
+        while (!(batch = articleTopicsPersistencePort.findPendingBatch(batchSize)).isEmpty()) {
+            batchNumber++;
+            List<ArticleTopicsResult> results =
+                    parallelExecutor.map(batch, ref -> resolveTopics(ref, topicOverflowCount));
+            if (!results.isEmpty()) {
+                articleTopicsPersistencePort.saveTopicsBatch(results);
+            }
+            processed += batch.size();
+            log.info("Processing batch {} | batch size: {} | processed so far: {}",
+                    batchNumber, batch.size(), processed);
+        }
+        log.info("Extract topics finished ({} articles, {} batches)", processed, batchNumber);
+        if (topicOverflowCount.get() > 0) {
+            log.info("Articles with more than 5 topics: {}", topicOverflowCount.get());
+        }
+    }
+
+    private ArticleTopicsResult resolveTopics(ArticleRawHtml ref, AtomicInteger topicOverflowCount) {
+        List<LinkDto> topics = topicsTagsExtractor.extract(ref.articleId(), ref.rawHtml()).topics();
+        if (topics.size() > 5) {
+            topicOverflowCount.incrementAndGet();
+            log.debug("Article {} has {} topics. Only first 5 topics will be stored.", ref.articleId(), topics.size());
+        }
+        String topic1Name = topics.isEmpty() ? null : topics.get(0).name();
+        String topic1Url = topics.isEmpty() ? null : topics.get(0).url();
+        String mainCategory = mainCategoryResolver.resolve(topic1Name, topic1Url);
+        return new ArticleTopicsResult(ref.articleId(), topics, mainCategory);
+    }
+
     private void downloadImages() {
         if (!props.steps().downloadImages()) {
             return;
         }
         log.info("Step: DOWNLOAD IMAGES");
-        List<ArticleImageRef> imageRefs = articlePersistencePort.findImageRefsForDelivery(props.imageBatchSize());
-        log.info("Downloading {} images", imageRefs.size());
-        parallelExecutor.execute(imageRefs, imageDownloadPort::download);
+
+        List<String> allCategories = articlePersistencePort.findDistinctCategories();
+        List<CategoryPendingCount> pendingCategories = imagePersistencePort.findCategoriesOrderedByPendingCount();
+        log.info("Pending categories: {} of {} total", pendingCategories.size(), allCategories.size());
+
+        int total = pendingCategories.size();
+        int index = 0;
+        for (CategoryPendingCount entry : pendingCategories) {
+            index++;
+            log.info("Category {}/{} — {} (pending: {})", index, total, entry.category(), entry.pendingCount());
+            downloadBatches(entry.category(),
+                    () -> imagePersistencePort.findPendingImagesForCategory(entry.category(), props.imageBatchSize()));
+        }
+
+        log.info("Uncategorized — starting");
+        downloadBatches("uncategorized",
+                () -> imagePersistencePort.findPendingImagesWithoutCategory(props.imageBatchSize()));
+
         log.info("Download finished");
     }
 
-    private void downloadVideo() {
+    private void downloadBatches(String label, Supplier<List<ArticleImageRef>> fetch) {
+        int batches = 0;
+        int downloaded = 0;
+        List<ArticleImageRef> batch;
+        while (!(batch = fetch.get()).isEmpty()) {
+            parallelExecutor.execute(batch, this::downloadOne);
+            batches++;
+            downloaded += batch.size();
+        }
+        log.info("Category {} finished ({} images, {} batches)", label, downloaded, batches);
+    }
 
+    private void downloadOne(ArticleImageRef ref) {
+        DownloadResult result = imageDownloadPort.download(ref);
+        if (result.status() == DownloadStatus.DOWNLOADED) {
+            imagePersistencePort.markDownloaded(ref.id(), result.localFilePath(), result.fileSize());
+        } else {
+            imagePersistencePort.markFailed(ref.id());
+        }
+    }
+
+    private void downloadVideo() {
+        if (!props.steps().downloadVideos()) {
+            return;
+        }
+        log.info("Step: DOWNLOAD VIDEOS");
+
+        List<String> allCategories = articlePersistencePort.findDistinctCategories();
+        List<CategoryPendingCount> pendingCategories = videoPersistencePort.findCategoriesOrderedByPendingCount();
+        log.info("Pending categories: {} of {} total", pendingCategories.size(), allCategories.size());
+
+        int total = pendingCategories.size();
+        int index = 0;
+        for (CategoryPendingCount entry : pendingCategories) {
+            index++;
+            log.info("Category {}/{} — {} (pending: {})", index, total, entry.category(), entry.pendingCount());
+            downloadVideoBatches(entry.category(),
+                    () -> videoPersistencePort.findPendingVideosForCategory(entry.category(), props.videoBatchSize()));
+        }
+
+        log.info("Uncategorized video — starting");
+        downloadVideoBatches("uncategorized",
+                () -> videoPersistencePort.findPendingVideosWithoutCategory(props.videoBatchSize()));
+
+        log.info("Download video finished");
+    }
+
+    private void downloadVideoBatches(String label, Supplier<List<ArticleVideoRef>> fetch) {
+        int batches = 0;
+        int downloaded = 0;
+        List<ArticleVideoRef> batch;
+        while (!(batch = fetch.get()).isEmpty()) {
+            parallelExecutor.execute(batch, this::downloadVideoOne);
+            batches++;
+            downloaded += batch.size();
+        }
+        log.info("Category {} finished ({} videos, {} batches)", label, downloaded, batches);
+    }
+
+    private void downloadVideoOne(ArticleVideoRef ref) {
+        DownloadResult result = videoDownloadPort.download(ref);
+        if (result.status() == DownloadStatus.DOWNLOADED) {
+            videoPersistencePort.markDownloaded(ref.id(), result.localFilePath(), result.fileSize());
+        } else {
+            videoPersistencePort.markFailed(ref.id());
+        }
     }
 
     private void exportJson() {
         if (!props.steps().exportJson()) {
             return;
         }
-        log.info("Step: EXPORT JSON");
-        List<Article> articles = articlePersistencePort.findAllArticles();
-        List<Image> images = imagePersistencePort.findAllImages();
-        List<Video> videos = videoPersistencePort.findAllVideos();
+        if ("topics".equals(props.export().mode())) {
+            exportJsonByTopics();
+        } else {
+            exportJsonByCategory();
+        }
+    }
 
-        ExportData data = new ExportData(articles, images, videos);
-        exportPort.export(data);
+    private void exportJsonByCategory() {
+        log.info("Step: EXPORT JSON");
+
+        int pageSize = props.parseBatchSize();
+
+        List<String> categories = articlePersistencePort.findDistinctCategories();
+        log.info("Exporting {} categories", categories.size());
+        for (String category : categories) {
+            int page = 0;
+            List<Article> batch;
+            while (!(batch = articlePersistencePort.findArticlesByCategory(category, page, pageSize)).isEmpty()) {
+                exportBatch(category, batch);
+                page++;
+            }
+        }
+
+        int page = 0;
+        List<Article> batch;
+        while (!(batch = articlePersistencePort.findArticlesWithoutCategory(page, pageSize)).isEmpty()) {
+            exportBatch(null, batch);
+            page++;
+        }
+
         log.info("Export finished");
+    }
+
+    private void exportBatch(String category, List<Article> articles) {
+        List<String> articleIds = articles.stream().map(Article::id).toList();
+        List<Image> images = imagePersistencePort.findImagesByArticleIds(articleIds);
+        List<Video> videos = videoPersistencePort.findVideosByArticleIds(articleIds);
+
+        List<ArticleRawHtml> rawHtmls = articleHtmlPersistencePort.findRawHtmlByArticleIds(articleIds);
+        List<ArticleLinks> articleLinks = rawHtmls.stream()
+                .map(r -> topicsTagsExtractor.extract(r.articleId(), r.rawHtml()))
+                .toList();
+
+        exportPort.export(new ExportData(category, articles, images, videos, articleLinks, null));
+    }
+
+    private void exportJsonByTopics() {
+        log.info("Step: EXPORT JSON (topics)");
+        List<TopicTarget> targets = articleTopicsPersistencePort.findDistinctTopicTargets();
+        log.info("Exporting {} topic groups", targets.size());
+        int pageSize = props.parseBatchSize();
+        for (TopicTarget target : targets) {
+            int page = 0;
+            ArticleTopicsPage batch;
+            while (!(batch = articleTopicsPersistencePort.findArticlesByTopic(target, page, pageSize)).articles().isEmpty()) {
+                exportTopicBatch(target, batch);
+                page++;
+            }
+        }
+        log.info("Export (topics) finished");
+    }
+
+    private void exportTopicBatch(TopicTarget target, ArticleTopicsPage page) {
+        List<Article> articles = page.articles();
+        List<String> articleIds = articles.stream().map(Article::id).toList();
+        List<Image> images = imagePersistencePort.findImagesByArticleIds(articleIds);
+        List<Video> videos = videoPersistencePort.findVideosByArticleIds(articleIds);
+
+        List<ArticleRawHtml> rawHtmls = articleHtmlPersistencePort.findRawHtmlByArticleIds(articleIds);
+        List<ArticleLinks> articleLinks = rawHtmls.stream()
+                .map(r -> topicsTagsExtractor.extract(r.articleId(), r.rawHtml()))
+                .toList(); // adapter reads only .tags() from these
+
+        exportPort.export(new ExportData(null, articles, images, videos, articleLinks,
+                new TopicExportContext(target, page.articleTopics())));
     }
 }

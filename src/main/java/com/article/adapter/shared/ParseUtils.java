@@ -3,8 +3,12 @@ package com.article.adapter.shared;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -141,6 +145,48 @@ public class ParseUtils {
     }
     public static String videoFilePrefix(String category, String articleId, String platform, String videoId) {
         return categorySlug(category) + "_" + articleId + "_video_" + platform.toLowerCase() + "_" + videoId;
+    }
+
+    public static String shortId(String id) {
+        if (id == null || id.isBlank()) {
+            return "unknown";
+        }
+        return id.length() <= 8 ? id : id.substring(0, 8);
+    }
+
+    /**
+     * Builds a topic-file display hierarchy from a main category and an ordered list of topic
+     * names, skipping null/blank entries and collapsing an entry that repeats the immediately
+     * preceding one (e.g. main_category == topic1_name) — not just the main_category/topic1 case
+     * specifically, any adjacent repeat.
+     */
+    public static List<String> buildHierarchy(String mainCategory, List<String> topicNames) {
+        List<String> hierarchy = new ArrayList<>();
+        addIfNewAndNotBlank(hierarchy, mainCategory);
+        for (String name : topicNames) {
+            addIfNewAndNotBlank(hierarchy, name);
+        }
+        return List.copyOf(hierarchy);
+    }
+
+    private static void addIfNewAndNotBlank(List<String> hierarchy, String name) {
+        if (name == null || name.isBlank()) {
+            return;
+        }
+        if (!hierarchy.isEmpty() && hierarchy.get(hierarchy.size() - 1).equals(name)) {
+            return;
+        }
+        hierarchy.add(name);
+    }
+
+    /** SHA-256 based, not {@code String.hashCode()} — must stay stable across JVM runs/versions. */
+    public static String shortHash(String value) {
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash, 0, 5);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private static boolean hasWpImageClass(Element img) {

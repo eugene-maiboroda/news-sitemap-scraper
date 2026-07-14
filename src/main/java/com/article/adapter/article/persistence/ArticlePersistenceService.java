@@ -2,7 +2,6 @@ package com.article.adapter.article.persistence;
 
 import com.article.adapter.article.mapper.ArticleMapper;
 import com.article.domain.Article;
-import com.article.domain.ArticleImageRef;
 import com.article.domain.ArticleLink;
 import com.article.domain.status.CrawlStatus;
 import com.article.port.ArticlePersistencePort;
@@ -65,12 +64,19 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
     }
 
     @Override
-    public List<Article> findAllArticles() {
-        return articleMapper.toArticles(articleRepository.findAllOrdered());
+    public List<String> findDistinctCategories() {
+        return articleRepository.findDistinctCategories();
     }
 
     @Override
-    public List<ArticleImageRef> findImageRefsForDelivery(int limit) {
-        return articleRepository.findImageRefsForDelivery(PageRequest.of(0, limit));
+    public List<Article> findArticlesByCategory(String category, int page, int pageSize) {
+        return articleMapper.toArticles(
+                articleRepository.findByCategoryOrderById(category, PageRequest.of(page, pageSize)));
+    }
+
+    @Override
+    public List<Article> findArticlesWithoutCategory(int page, int pageSize) {
+        return articleMapper.toArticles(
+                articleRepository.findArticlesWithoutCategory(PageRequest.of(page, pageSize)));
     }
 }

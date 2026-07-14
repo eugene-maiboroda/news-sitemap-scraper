@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 @Slf4j
 @Component
@@ -31,6 +32,27 @@ public class ParallelExecutor {
             Thread.currentThread().interrupt();
         } catch (ExecutionException e) {
             log.error("Unexpected execution error", e);
+        }
+    }
+
+    public <T, R> List<R> map(List<T> items, Function<T, R> function) {
+        try {
+            List<Future<R>> futures = new ArrayList<>();
+            for (T item : items) {
+                futures.add(executor.submit(() -> function.apply(item)));
+            }
+            List<R> results = new ArrayList<>(items.size());
+            for (Future<R> f : futures) {
+                results.add(f.get());
+            }
+            return results;
+        } catch (InterruptedException e) {
+            log.warn("Parsing interrupted");
+            Thread.currentThread().interrupt();
+            return List.of();
+        } catch (ExecutionException e) {
+            log.error("Unexpected execution error", e);
+            return List.of();
         }
     }
 

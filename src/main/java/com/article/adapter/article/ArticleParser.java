@@ -93,7 +93,6 @@ public class ArticleParser implements ArticlePagePort {
                     .author(getText(doc.select(AUTHOR_SELECTOR).eq(0)))
                     .authorLink(getFirstLink(doc.select(AUTHOR_SELECTOR).eq(0)))
                     .content(content)
-                    .rawHtml(articleEl != null ? articleEl.outerHtml() : html)
                     .build();
 
             List<Image> images = extractImages(doc, articleId);

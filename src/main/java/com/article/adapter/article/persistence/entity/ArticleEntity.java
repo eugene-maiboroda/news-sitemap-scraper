@@ -46,8 +46,41 @@ public class ArticleEntity {
 
     private String content;
 
-    @Column(name = "raw_html")
-    private String rawHtml;
+    @Column(name = "topic1_name")
+    private String topic1Name;
+
+    @Column(name = "topic1_url")
+    private String topic1Url;
+
+    @Column(name = "topic2_name")
+    private String topic2Name;
+
+    @Column(name = "topic2_url")
+    private String topic2Url;
+
+    @Column(name = "topic3_name")
+    private String topic3Name;
+
+    @Column(name = "topic3_url")
+    private String topic3Url;
+
+    @Column(name = "topic4_name")
+    private String topic4Name;
+
+    @Column(name = "topic4_url")
+    private String topic4Url;
+
+    @Column(name = "topic5_name")
+    private String topic5Name;
+
+    @Column(name = "topic5_url")
+    private String topic5Url;
+
+    @Column(name = "main_category")
+    private String mainCategory;
+
+    @Column(name = "topics_extracted")
+    private boolean topicsExtracted;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

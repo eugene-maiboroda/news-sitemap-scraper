@@ -1,10 +1,9 @@
 package com.article.port;
 
 import com.article.domain.ArticleImageRef;
-
-import java.util.List;
+import com.article.domain.DownloadResult;
 
 public interface ImageDownloadPort {
 
-    void download(ArticleImageRef imageRef);
+    DownloadResult download(ArticleImageRef imageRef);
 }

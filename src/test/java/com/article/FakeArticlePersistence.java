@@ -1,7 +1,6 @@
 package com.article;
 
 import com.article.domain.Article;
-import com.article.domain.ArticleImageRef;
 import com.article.domain.ArticleLink;
 import com.article.port.ArticlePersistencePort;
 
@@ -34,12 +33,17 @@ public class FakeArticlePersistence implements ArticlePersistencePort {
     }
 
     @Override
-    public List<Article> findAllArticles() {
+    public List<String> findDistinctCategories() {
         return List.of();
     }
 
     @Override
-    public List<ArticleImageRef> findImageRefsForDelivery(int limit) {
+    public List<Article> findArticlesByCategory(String category, int page, int pageSize) {
+        return List.of();
+    }
+
+    @Override
+    public List<Article> findArticlesWithoutCategory(int page, int pageSize) {
         return List.of();
     }
 }
