@@ -15,6 +15,7 @@ public record CollectorProps(
         String exportDir,
         String imagesDir,
         String videosDir,
+        String avatarsDir,
         int videoBatchSize,
         int videoDownloadTimeoutSeconds,
         String ytDlpCommand,

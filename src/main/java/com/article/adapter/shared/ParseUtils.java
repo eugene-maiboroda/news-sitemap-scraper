@@ -147,6 +147,24 @@ public class ParseUtils {
         return categorySlug(category) + "_" + articleId + "_video_" + platform.toLowerCase() + "_" + videoId;
     }
 
+    /** Deterministic id for an author's avatar file, keyed off the stable author id — reused as-is
+     *  by the future avatar-download step, so a file saved from this prefix always matches the
+     *  avatarId already written into the author export JSON. */
+    public static String avatarFilePrefix(String authorId) {
+        return "author_" + authorId + "_avatar";
+    }
+
+    /** File extension inferred from a media URL's path (ignoring query params), defaulting to
+     *  {@code .jpg} when none is present — shared by every download adapter that saves a URL's
+     *  bytes under a deterministic *FilePrefix name (see ImageDownloadAdapter, avatar download). */
+    public static String resolveExtension(String url) {
+        int question = url.indexOf('?');
+        String clean = question == -1 ? url : url.substring(0, question);
+
+        int dot = clean.lastIndexOf('.');
+        return dot == -1 ? ".jpg" : clean.substring(dot);
+    }
+
     public static String shortId(String id) {
         if (id == null || id.isBlank()) {
             return "unknown";

@@ -46,14 +46,10 @@ public class ArticleParser implements ArticlePagePort {
     private static final String CONTENT_SELECTOR = ".entry-content";
     private static final String ARTICLE_SELECTOR = "article";
 
-    // both are common WordPress theme conventions (not single-article guesses): the featured/header
-    // image lives in a separate container from the inline body content, so both need covering.
     private static final String IMAGES_SELECTOR = ".entry-content img, .featured-image img";
     private static final String ALT_CONTENT_IMAGES_SELECTOR = "figure img";
     private static final String AUTHOR_SELECTOR = ".article-header .byline__author";
 
-    //    private static final String SUB_TITLE_SELECTOR = "";
-    //    private static final String DATE_SELECTOR = "#main-article div:has(.underline) time";
     private final HttpContentLoader contentLoader;
     private final JwVideoExtractor jwVideoExtractor;
     private final ObjectProvider<ConnatixVideoExtractor> connatixVideoExtractor;
@@ -116,11 +112,6 @@ public class ArticleParser implements ArticlePagePort {
         }
     }
 
-//    private LocalDate parsePublishDate(Document doc) {
-//        String datetime = doc.select(DATE_SELECTOR).attr("datetime");
-//        return Instant.parse(datetime).atZone(ZoneId.of("America/New_York")).toLocalDate();
-//    }
-
     private List<Image> extractImages(Document doc, String articleId) {
         List<Element> imgElements = contentImages(doc, IMAGES_SELECTOR);
         if (imgElements.isEmpty()) {
@@ -157,11 +148,6 @@ public class ArticleParser implements ArticlePagePort {
         return dedupByWpImageId(candidates);
     }
 
-    /**
-     * Some articles legitimately repeat the same media-library photo twice within the same content
-     * container (e.g. an inline lightbox mirror). Keep one element per WordPress attachment id, the
-     * first in document order; images without that class (no grouping key available) are always kept.
-     */
     private List<Element> dedupByWpImageId(List<Element> candidates) {
         List<Element> deduped = new ArrayList<>();
         Set<String> seenIds = new HashSet<>();

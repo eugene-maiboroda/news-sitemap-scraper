@@ -42,7 +42,7 @@ class TopicJsonExportAdapterTest {
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         articleExportMapper = new ArticleExportMapper();
         CollectorProps props = new CollectorProps(null, null, 0, 0, 0, 0,
-                tempDir.toString(), null, null, 0, 0, null, null);
+                tempDir.toString(), null, null, null, 0, 0, null, null);
         adapter = new TopicJsonExportAdapter(objectMapper, props, articleExportMapper);
     }
 

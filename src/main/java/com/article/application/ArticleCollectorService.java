@@ -37,6 +37,7 @@ public class ArticleCollectorService {
     private final TopicsTagsExtractor topicsTagsExtractor;
     private final ArticleTopicsPersistencePort articleTopicsPersistencePort;
     private final MainCategoryResolver mainCategoryResolver;
+    private final AuthorUseCase authorUseCase;
 
     public void run() {
         discoverLinks();
@@ -45,6 +46,16 @@ public class ArticleCollectorService {
         downloadImages();
         downloadVideo();
         exportJson();
+
+//        log.info("Author parsed and updated");
+//        authorUseCase.parseAuthors();
+//        log.info("Authors parsed and updated");
+
+//        authorUseCase.downloadAvatars();
+//        log.info("Author avatars downloaded");
+
+//        authorUseCase.exportAuthors();
+//        log.info("Authors exported");
 
         log.info("NYPost Article Collector finished");
     }
@@ -248,8 +259,11 @@ public class ArticleCollectorService {
         if (!props.steps().exportJson()) {
             return;
         }
-        if ("topics".equals(props.export().mode())) {
+        String mode = props.export().mode();
+        if ("topics".equals(mode)) {
             exportJsonByTopics();
+        } else if ("tags".equals(mode)) {
+            exportJsonByTags();
         } else {
             exportJsonByCategory();
         }
@@ -292,6 +306,59 @@ public class ArticleCollectorService {
                 .toList();
 
         exportPort.export(new ExportData(category, articles, images, videos, articleLinks, null));
+    }
+
+    // Tags mode ignores category and topic hierarchy entirely — classification happens inside
+    // SportsBettingJsonExportAdapter purely from tags, so this scans every article once regardless
+    // of category. Uses exportTagsBatch(...) below instead of the shared exportBatch(...) helper
+    // ONLY so db/prepare/export phases can be timed separately for diagnostics, without touching
+    // exportBatch() itself (which category mode also uses) — a small, deliberate duplication of its
+    // ~6-line body, kept isolated to this method so category mode's behavior/logs are untouched.
+    private void exportJsonByTags() {
+        log.info("Step: EXPORT JSON (tags)");
+        int pageSize = props.parseBatchSize();
+        int page = 0;
+        long totalArticles = 0;
+        List<Article> batch;
+        while (true) {
+            if (page == 0) {
+                log.info("[EXPORT][tags] requesting first page | pageSize={}", pageSize);
+            }
+            long dbStart = System.currentTimeMillis();
+            batch = articlePersistencePort.findAllArticlesOrdered(page, pageSize);
+            long dbMs = System.currentTimeMillis() - dbStart;
+            if (page == 0) {
+                log.info("[EXPORT][tags] first page received | articles={} dbMs={}", batch.size(), dbMs);
+            }
+            if (batch.isEmpty()) {
+                break;
+            }
+            totalArticles += batch.size();
+            exportTagsBatch(page, batch, dbMs);
+            page++;
+        }
+        log.info("[EXPORT][tags] scan finished | pages={} totalArticles={}", page, totalArticles);
+        log.info("Export (tags) finished");
+    }
+
+    private void exportTagsBatch(int page, List<Article> articles, long dbMs) {
+        long prepareStart = System.currentTimeMillis();
+        List<String> articleIds = articles.stream().map(Article::id).toList();
+        List<Image> images = imagePersistencePort.findImagesByArticleIds(articleIds);
+        List<Video> videos = videoPersistencePort.findVideosByArticleIds(articleIds);
+
+        List<ArticleRawHtml> rawHtmls = articleHtmlPersistencePort.findRawHtmlByArticleIds(articleIds);
+        List<ArticleLinks> articleLinks = rawHtmls.stream()
+                .map(r -> topicsTagsExtractor.extract(r.articleId(), r.rawHtml()))
+                .toList();
+        long prepareMs = System.currentTimeMillis() - prepareStart;
+
+        long exportStart = System.currentTimeMillis();
+        exportPort.export(new ExportData(null, articles, images, videos, articleLinks, null));
+        long exportMs = System.currentTimeMillis() - exportStart;
+
+        log.info("[EXPORT][tags] page={} articles={} dbMs={} prepareMs={} exportMs={} totalMs={}",
+                page, articles.size(), dbMs, prepareMs, exportMs, dbMs + prepareMs + exportMs);
     }
 
     private void exportJsonByTopics() {

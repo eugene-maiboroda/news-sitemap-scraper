@@ -25,7 +25,7 @@ public class ImageDownloadAdapter implements ImageDownloadPort {
     public DownloadResult download(ArticleImageRef ref) {
         try {
             Path dir = Path.of(collectorProps.imagesDir(), ParseUtils.categorySlug(ref.category()));
-            String fileName = ParseUtils.imageFilePrefix(ref.category(), ref.articleId(), ref.position()) + resolveExtension(ref.imageUrl());
+            String fileName = ParseUtils.imageFilePrefix(ref.category(), ref.articleId(), ref.position()) + ParseUtils.resolveExtension(ref.imageUrl());
             Path target = dir.resolve(fileName);
 
             if (Files.exists(target)) {
@@ -50,11 +50,4 @@ public class ImageDownloadAdapter implements ImageDownloadPort {
         }
     }
 
-    private String resolveExtension(String url) {
-        int question = url.indexOf('?');
-        String clean = question == -1 ? url : url.substring(0, question);
-
-        int dot = clean.lastIndexOf('.');
-        return dot == -1 ? ".jpg" : clean.substring(dot);
-    }
 }

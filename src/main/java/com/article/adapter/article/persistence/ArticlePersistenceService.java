@@ -3,6 +3,7 @@ package com.article.adapter.article.persistence;
 import com.article.adapter.article.mapper.ArticleMapper;
 import com.article.domain.Article;
 import com.article.domain.ArticleLink;
+import com.article.domain.Author;
 import com.article.domain.status.CrawlStatus;
 import com.article.port.ArticlePersistencePort;
 import com.article.port.IdGenerationPort;
@@ -79,4 +80,25 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
         return articleMapper.toArticles(
                 articleRepository.findArticlesWithoutCategory(PageRequest.of(page, pageSize)));
     }
+
+    @Override
+    public List<Article> findAllArticlesOrdered(int page, int pageSize) {
+        return articleMapper.toArticles(
+                articleRepository.findAllByOrderById(PageRequest.of(page, pageSize)));
+    }
+
+    @Override
+    public List<Author> findDistinctAuthors() {
+        return articleRepository.findDistinctAuthors().stream()
+                .map(row -> new Author(
+                        idGenerationPort.generateId(),
+                        row.getAuthorName(),
+                        row.getAuthorUrl(),
+                        null,
+                        null,
+                        null
+                ))
+                .toList();
+    }
 }
+

@@ -1,6 +1,7 @@
 package com.article.adapter.article.persistence;
 
 import com.article.adapter.article.persistence.entity.ArticleEntity;
+import com.article.domain.Author;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -10,12 +11,31 @@ import java.util.List;
 
 interface ArticleRepository extends JpaRepository<ArticleEntity, String> {
 
+    @Query(value = """
+            SELECT DISTINCT ON (author_link)
+               author      AS authorName,
+               author_link AS authorUrl
+           FROM articles
+           WHERE author_link IS NOT NULL
+             AND BTRIM(author_link) <> ''
+             AND author IS NOT NULL
+             AND BTRIM(author) <> ''
+           ORDER BY author_link, id;
+            """, nativeQuery = true)
+    List<DistinctAuthorView> findDistinctAuthors();
+
     @Query("SELECT DISTINCT a.category FROM ArticleEntity a WHERE a.category IS NOT NULL AND a.category <> ''")
     List<String> findDistinctCategories();
 
     // ordered by id so that LIMIT/OFFSET paging is stable across calls — without an explicit
     // order Postgres doesn't guarantee row order between two queries with different offsets.
     List<ArticleEntity> findByCategoryOrderById(String category, Pageable pageable);
+
+    // Full-table scan regardless of category, used by the tags export mode: classification there
+    // happens entirely in memory from tags in raw_html, not from any stored column, so there is no
+    // per-target SQL filter to write here — just a stable, ordered page over every article. Derived
+    // query returning List (not Page) so Spring Data never issues an extra COUNT(*) per page.
+    List<ArticleEntity> findAllByOrderById(Pageable pageable);
 
     @Query("SELECT a FROM ArticleEntity a WHERE (a.category IS NULL OR a.category = '') ORDER BY a.id")
     List<ArticleEntity> findArticlesWithoutCategory(Pageable pageable);
@@ -190,4 +210,12 @@ interface ArticleRepository extends JpaRepository<ArticleEntity, String> {
 
         String getMainCategory();
     }
+
+    interface DistinctAuthorView {
+
+        String getAuthorName();
+
+        String getAuthorUrl();
+    }
+
 }
