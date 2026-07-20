@@ -1,6 +1,6 @@
 package com.article.adapter.export;
 
-import com.article.bootstrap.CollectorProps;
+import com.article.bootstrap.properties.StorageProps;
 import com.article.domain.Author;
 import com.article.port.AuthorExportPort;
 import com.fasterxml.jackson.core.JsonEncoding;
@@ -30,13 +30,13 @@ public class AuthorJsonExportAdapter implements AuthorExportPort {
     private static final String FILE_NAME = "AllAuthors.json";
 
     private final ObjectMapper objectMapper;
-    private final CollectorProps collectorProps;
+    private final StorageProps storageProps;
     private final AuthorExportMapper authorExportMapper;
 
     @Override
     public void export(List<Author> authors) {
         try {
-            Path exportDir = Path.of(collectorProps.exportDir());
+            Path exportDir = Path.of(storageProps.exportDir());
             Files.createDirectories(exportDir);
 
             JsonGenerator generator = objectMapper.getFactory().createGenerator(

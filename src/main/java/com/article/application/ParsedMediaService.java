@@ -2,8 +2,8 @@ package com.article.application;
 
 import com.article.domain.Image;
 import com.article.domain.Video;
-import com.article.port.ImagePersistencePort;
-import com.article.port.VideoPersistencePort;
+import com.article.port.persistence.ImagePersistencePort;
+import com.article.port.persistence.VideoPersistencePort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

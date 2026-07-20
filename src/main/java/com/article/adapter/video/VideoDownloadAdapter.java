@@ -1,7 +1,8 @@
 package com.article.adapter.video;
 
 import com.article.adapter.shared.ParseUtils;
-import com.article.bootstrap.CollectorProps;
+import com.article.bootstrap.properties.StorageProps;
+import com.article.bootstrap.properties.VideoProps;
 import com.article.domain.ArticleVideoRef;
 import com.article.domain.DownloadResult;
 import com.article.domain.status.VideoPlatform;
@@ -33,7 +34,8 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class VideoDownloadAdapter implements VideoDownloadPort {
 
-    private final CollectorProps collectorProps;
+    private final StorageProps storageProps;
+    private final VideoProps videoProps;
 
     @Override
     public DownloadResult download(ArticleVideoRef ref) {
@@ -44,7 +46,7 @@ public class VideoDownloadAdapter implements VideoDownloadPort {
         }
 
         try {
-            Path dir = Path.of(collectorProps.videosDir(), ParseUtils.categorySlug(ref.category()));
+            Path dir = Path.of(storageProps.videosDir(), ParseUtils.categorySlug(ref.category()));
             String prefix = ParseUtils.videoFilePrefix(
                     ref.category(), ref.articleId(), ref.platform().name(), ParseUtils.shortId(ref.id()));
             Path target = dir.resolve(prefix + ".mp4");
@@ -57,7 +59,7 @@ public class VideoDownloadAdapter implements VideoDownloadPort {
             Files.createDirectories(dir);
 
             List<String> command = List.of(
-                    collectorProps.ytDlpCommand(),
+                    videoProps.ytDlpCommand(),
                     url,
                     "-o", dir.resolve(prefix + ".%(ext)s").toString(),
                     "--no-playlist",
@@ -72,7 +74,7 @@ public class VideoDownloadAdapter implements VideoDownloadPort {
             closeQuietly(process.getOutputStream());
             drainOutput(process);
 
-            int timeoutSeconds = collectorProps.videoDownloadTimeoutSeconds();
+            int timeoutSeconds = videoProps.timeoutMs();
             if (!process.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
                 process.destroyForcibly();
                 log.warn("yt-dlp timed out after {} seconds", timeoutSeconds);

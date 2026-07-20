@@ -3,9 +3,9 @@ package com.article.adapter.export;
 import com.article.adapter.export.dto.ArticleExportDto;
 import com.article.adapter.shared.ParseUtils;
 import com.article.application.dto.ExportData;
+import com.article.bootstrap.properties.StorageProps;
 import com.article.domain.Article;
 import com.article.domain.ArticleLinks;
-import com.article.bootstrap.CollectorProps;
 import com.article.domain.Image;
 import com.article.domain.Video;
 import com.article.port.ExportPort;
@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 public class JsonExportAdapter implements ExportPort {
 
     private final ObjectMapper objectMapper;
-    private final CollectorProps collectorProps;
+    private final StorageProps storageProps;
     private final ArticleExportMapper articleExportMapper;
 
     private String openCategory;
@@ -72,7 +72,7 @@ public class JsonExportAdapter implements ExportPort {
 
     private void openNew(String category) {
         try {
-            Path exportDir = Path.of(collectorProps.exportDir());
+            Path exportDir = Path.of(storageProps.exportDir());
             Files.createDirectories(exportDir);
             generator = objectMapper.getFactory().createGenerator(
                     exportDir.resolve(category + ".json").toFile(), JsonEncoding.UTF8);

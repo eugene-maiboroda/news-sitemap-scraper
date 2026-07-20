@@ -2,9 +2,9 @@ package com.article.adapter.image;
 
 import com.article.adapter.http.HttpContentLoader;
 import com.article.adapter.shared.ParseUtils;
+import com.article.bootstrap.properties.StorageProps;
 import com.article.domain.ArticleImageRef;
 import com.article.domain.DownloadResult;
-import com.article.bootstrap.CollectorProps;
 import com.article.port.ImageDownloadPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,12 +19,12 @@ import java.nio.file.Path;
 public class ImageDownloadAdapter implements ImageDownloadPort {
 
     private final HttpContentLoader contentLoader;
-    private final CollectorProps collectorProps;
+    private final StorageProps storageProps;
 
     @Override
     public DownloadResult download(ArticleImageRef ref) {
         try {
-            Path dir = Path.of(collectorProps.imagesDir(), ParseUtils.categorySlug(ref.category()));
+            Path dir = Path.of(storageProps.imagesDir(), ParseUtils.categorySlug(ref.category()));
             String fileName = ParseUtils.imageFilePrefix(ref.category(), ref.articleId(), ref.position()) + ParseUtils.resolveExtension(ref.imageUrl());
             Path target = dir.resolve(fileName);
 

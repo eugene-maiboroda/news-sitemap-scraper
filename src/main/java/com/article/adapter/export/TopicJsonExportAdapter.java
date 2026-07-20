@@ -5,7 +5,7 @@ import com.article.adapter.export.dto.LinkDto;
 import com.article.adapter.shared.ParseUtils;
 import com.article.application.dto.ExportData;
 import com.article.application.dto.TopicExportContext;
-import com.article.bootstrap.CollectorProps;
+import com.article.bootstrap.properties.StorageProps;
 import com.article.domain.Article;
 import com.article.domain.ArticleLinks;
 import com.article.domain.Image;
@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
 public class TopicJsonExportAdapter implements ExportPort {
 
     private final ObjectMapper objectMapper;
-    private final CollectorProps collectorProps;
+    private final StorageProps storageProps;
     private final ArticleExportMapper articleExportMapper;
 
     private TopicTarget openTarget;
@@ -79,7 +79,7 @@ public class TopicJsonExportAdapter implements ExportPort {
         String slug = ParseUtils.categorySlug(hierarchy.get(hierarchy.size() - 1));
         String fileName = slug + "_" + ParseUtils.shortHash(targetKey(target)) + ".json";
         try {
-            Path topicDirectory = Path.of(collectorProps.exportDir()).resolve(slug);
+            Path topicDirectory = Path.of(storageProps.exportDir()).resolve(slug);
             Files.createDirectories(topicDirectory);
             generator = objectMapper.getFactory().createGenerator(
                     topicDirectory.resolve(fileName).toFile(), JsonEncoding.UTF8);

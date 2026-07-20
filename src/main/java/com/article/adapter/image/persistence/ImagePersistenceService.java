@@ -5,7 +5,7 @@ import com.article.domain.ArticleImageRef;
 import com.article.domain.CategoryPendingCount;
 import com.article.domain.Image;
 import com.article.port.IdGenerationPort;
-import com.article.port.ImagePersistencePort;
+import com.article.port.persistence.ImagePersistencePort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;

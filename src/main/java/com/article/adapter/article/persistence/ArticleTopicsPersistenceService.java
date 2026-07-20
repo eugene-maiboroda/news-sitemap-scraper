@@ -8,7 +8,7 @@ import com.article.domain.ArticleRawHtml;
 import com.article.domain.ArticleTopicsPage;
 import com.article.domain.ArticleTopicsResult;
 import com.article.domain.TopicTarget;
-import com.article.port.ArticleTopicsPersistencePort;
+import com.article.port.persistence.ArticleTopicsPersistencePort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;

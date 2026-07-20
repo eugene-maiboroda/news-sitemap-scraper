@@ -1,6 +1,6 @@
 package com.article.infrastructure;
 
-import com.article.bootstrap.BrowserProps;
+import com.article.bootstrap.properties.BrowserProps;
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Playwright;

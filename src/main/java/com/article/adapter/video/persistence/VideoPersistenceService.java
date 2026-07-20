@@ -5,7 +5,7 @@ import com.article.domain.ArticleVideoRef;
 import com.article.domain.CategoryPendingCount;
 import com.article.domain.Video;
 import com.article.port.IdGenerationPort;
-import com.article.port.VideoPersistencePort;
+import com.article.port.persistence.VideoPersistencePort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;

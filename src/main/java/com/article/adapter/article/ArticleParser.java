@@ -5,7 +5,7 @@ import com.article.adapter.shared.ParseUtils;
 import com.article.adapter.video.ConnatixVideoExtractor;
 import com.article.adapter.video.JwVideoExtractor;
 import com.article.adapter.video.YoutubeVideoExtractor;
-import com.article.bootstrap.CollectorProps;
+import com.article.bootstrap.properties.StepsProps;
 import com.article.domain.Article;
 import com.article.domain.ArticleLink;
 import com.article.domain.status.DownloadStatus;
@@ -21,7 +21,6 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpStatusCodeException;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -54,13 +53,12 @@ public class ArticleParser implements ArticlePagePort {
     private final JwVideoExtractor jwVideoExtractor;
     private final ObjectProvider<ConnatixVideoExtractor> connatixVideoExtractor;
     private final YoutubeVideoExtractor youtubeVideoExtractor;
-    private final CollectorProps collectorProps;
+    private final StepsProps stepsProps;
 
     @Override
     public ParseResult parse(ArticleLink link) {
         String url = link.articleUrl();
-        try {
-           String html = contentLoader.loadText(url);
+            String html = contentLoader.loadText(url);
             Document doc = Jsoup.parse(html, url);
             Element articleEl = doc.select(ARTICLE_SELECTOR).first();
             clearMarketing(articleEl);
@@ -96,21 +94,13 @@ public class ArticleParser implements ArticlePagePort {
             List<Video> videos = new ArrayList<>();
             jwVideoExtractor.extract(doc, articleId, url).ifPresent(videos::add);
             youtubeVideoExtractor.extract(doc, articleId, url).ifPresent(videos::add);
-            if (collectorProps.steps().extractConnatixVideos()) {
+            if (stepsProps.extractConnatixVideos().enabled()) {
                 connatixVideoExtractor.ifAvailable(extractor
                         -> extractor.extract(articleId, url).ifPresent(videos::add));
             }
 
             return ParseResult.ok(article, images, videos);
-
-        } catch (HttpStatusCodeException e) {
-            log.error("[PARSE] HTTP {} for {}", e.getStatusCode().value(), url);
-            return ParseResult.error(url, "HTTP " + e.getStatusCode().value());
-        } catch (Exception e) {
-            log.error("[PARSE] Failed to fetch {}: {}", url, e.getMessage());
-            return ParseResult.error(url, e.getMessage());
         }
-    }
 
     private List<Image> extractImages(Document doc, String articleId) {
         List<Element> imgElements = contentImages(doc, IMAGES_SELECTOR);

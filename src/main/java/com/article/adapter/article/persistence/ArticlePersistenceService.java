@@ -5,7 +5,7 @@ import com.article.domain.Article;
 import com.article.domain.ArticleLink;
 import com.article.domain.Author;
 import com.article.domain.status.CrawlStatus;
-import com.article.port.ArticlePersistencePort;
+import com.article.port.persistence.ArticlePersistencePort;
 import com.article.port.IdGenerationPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

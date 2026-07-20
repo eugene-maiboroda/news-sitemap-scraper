@@ -2,7 +2,7 @@ package com.article.adapter.author;
 
 import com.article.adapter.http.HttpContentLoader;
 import com.article.adapter.shared.ParseUtils;
-import com.article.bootstrap.CollectorProps;
+import com.article.bootstrap.properties.StorageProps;
 import com.article.domain.Author;
 import com.article.domain.DownloadResult;
 import com.article.port.AuthorAvatarDownloadPort;
@@ -26,12 +26,12 @@ import java.nio.file.Path;
 public class AuthorAvatarDownloadAdapter implements AuthorAvatarDownloadPort {
 
     private final HttpContentLoader contentLoader;
-    private final CollectorProps collectorProps;
+    private final StorageProps storageProps;
 
     @Override
     public DownloadResult download(Author author) {
         try {
-            Path dir = Path.of(collectorProps.avatarsDir());
+            Path dir = Path.of(storageProps.avatarsDir());
             String fileName = ParseUtils.avatarFilePrefix(author.id()) + ParseUtils.resolveExtension(author.avatarUrl());
             Path target = dir.resolve(fileName);
 

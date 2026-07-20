@@ -2,7 +2,7 @@ package com.article.adapter.export;
 
 import com.article.application.dto.ExportData;
 import com.article.application.dto.TopicExportContext;
-import com.article.bootstrap.CollectorProps;
+import com.article.bootstrap.properties.CollectorProps;
 import com.article.domain.Article;
 import com.article.domain.TopicTarget;
 import com.fasterxml.jackson.databind.JsonNode;

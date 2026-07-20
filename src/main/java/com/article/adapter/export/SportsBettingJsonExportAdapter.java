@@ -3,7 +3,7 @@ package com.article.adapter.export;
 import com.article.adapter.export.dto.ArticleExportDto;
 import com.article.adapter.export.dto.LinkDto;
 import com.article.application.dto.ExportData;
-import com.article.bootstrap.CollectorProps;
+import com.article.bootstrap.properties.StorageProps;
 import com.article.domain.Article;
 import com.article.domain.ArticleLinks;
 import com.article.domain.Image;
@@ -55,7 +55,7 @@ public class SportsBettingJsonExportAdapter implements ExportPort {
     private static final int MAX_DIAGNOSTIC_LOGS = 10;
 
     private final ObjectMapper objectMapper;
-    private final CollectorProps collectorProps;
+    private final StorageProps storageProps;
     private final ArticleExportMapper articleExportMapper;
 
     private final Map<SportsBettingExportTarget, JsonGenerator> generators = new EnumMap<>(SportsBettingExportTarget.class);
@@ -181,7 +181,7 @@ public class SportsBettingJsonExportAdapter implements ExportPort {
 
     private JsonGenerator openNew(SportsBettingExportTarget target) {
         try {
-            Path exportDir = Path.of(collectorProps.exportDir());
+            Path exportDir = Path.of(storageProps.exportDir());
             Files.createDirectories(exportDir);
             JsonGenerator generator = objectMapper.getFactory().createGenerator(
                     exportDir.resolve(target.getFileName()).toFile(), JsonEncoding.UTF8);

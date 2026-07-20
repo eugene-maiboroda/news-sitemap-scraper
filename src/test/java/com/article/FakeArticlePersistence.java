@@ -3,7 +3,7 @@ package com.article;
 import com.article.domain.Article;
 import com.article.domain.ArticleLink;
 import com.article.domain.Author;
-import com.article.port.ArticlePersistencePort;
+import com.article.port.persistence.ArticlePersistencePort;
 
 import java.util.List;
 

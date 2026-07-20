@@ -2,7 +2,7 @@ package com.article.adapter.author.persistance;
 
 import com.article.adapter.author.mapper.AuthorMapper;
 import com.article.domain.Author;
-import com.article.port.AuthorPersistencePort;
+import com.article.port.persistence.AuthorPersistencePort;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

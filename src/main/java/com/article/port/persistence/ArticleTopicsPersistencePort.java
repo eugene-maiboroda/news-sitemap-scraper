@@ -1,4 +1,4 @@
-package com.article.port;
+package com.article.port.persistence;
 
 import com.article.domain.ArticleRawHtml;
 import com.article.domain.ArticleTopicsPage;

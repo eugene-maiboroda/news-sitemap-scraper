@@ -1,7 +1,7 @@
 package com.article.adapter.article.persistence;
 
 import com.article.domain.ArticleRawHtml;
-import com.article.port.ArticleHtmlPersistencePort;
+import com.article.port.persistence.ArticleHtmlPersistencePort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

@@ -1,4 +1,4 @@
-package com.article.port;
+package com.article.port.persistence;
 
 import com.article.domain.Article;
 import com.article.domain.ArticleLink;

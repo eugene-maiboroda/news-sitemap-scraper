@@ -1,6 +1,6 @@
 package com.article.bootstrap;
 
-import com.article.application.ArticleCollectorService;
+import com.article.port.ArticleCollectionUseCase;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.boot.CommandLineRunner;
@@ -10,10 +10,10 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class CollectRunner implements CommandLineRunner {
 
-    private final ArticleCollectorService collectorService;
+    private final ArticleCollectionUseCase collectionUseCase;
 
     @Override
     public void run(String... args) {
-        collectorService.run();
+        collectionUseCase.run();
     }
 }

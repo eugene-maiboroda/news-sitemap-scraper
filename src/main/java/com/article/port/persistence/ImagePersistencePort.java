@@ -1,4 +1,4 @@
-package com.article.port;
+package com.article.port.persistence;
 
 import com.article.domain.ArticleImageRef;
 import com.article.domain.CategoryPendingCount;
