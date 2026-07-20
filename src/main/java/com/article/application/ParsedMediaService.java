@@ -1,9 +1,9 @@
 package com.article.application;
 
-import com.article.domain.Image;
-import com.article.domain.Video;
-import com.article.port.persistence.ImagePersistencePort;
-import com.article.port.persistence.VideoPersistencePort;
+import com.article.domain.media.Image;
+import com.article.domain.media.Video;
+import com.article.port.out.persistence.ImagePersistencePort;
+import com.article.port.out.persistence.VideoPersistencePort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,31 +20,25 @@ public class ParsedMediaService {
 
     public void saveVideos(List<Video> videos) {
         for (Video video : videos) {
-            boolean exists = switch (video.getPlatform()) {
+            boolean exists = switch (video.platform()) {
                 case JW_TOP ->
-                        videoPersistencePort.existsByArticleIdAndJwMediaId(video.getArticleId(), video.getJwMediaId());
+                        videoPersistencePort.existsByArticleIdAndJwMediaId(video.articleId(), video.jwMediaId());
                 case CONNATIX_BOTTOM ->
-                        videoPersistencePort.existsByArticleIdAndConnatixMmid(video.getArticleId(), video.getConnatixMmid());
+                        videoPersistencePort.existsByArticleIdAndConnatixMmid(video.articleId(), video.connatixMmid());
                 case YOUTUBE ->
-                        videoPersistencePort.existsByArticleIdAndYoutubeVideoId(video.getArticleId(), video.getYoutubeVideoId());
+                        videoPersistencePort.existsByArticleIdAndYoutubeVideoId(video.articleId(), video.youtubeVideoId());
             };
             if (exists) {
-                log.debug("[VIDEO][SKIP] duplicate platform={} articleId={}", video.getPlatform(), video.getArticleId());
+                log.debug("[VIDEO][SKIP] duplicate platform={} articleId={}", video.platform(), video.articleId());
                 continue;
             }
             videoPersistencePort.save(video);
-            log.info("[VIDEO][SAVED] platform={} articleId={}", video.getPlatform(), video.getArticleId());
+            log.info("[VIDEO][SAVED] platform={} articleId={}", video.platform(), video.articleId());
         }
     }
 
     public void saveImages(List<Image> images) {
-        for (Image image : images) {
-            if (imagePersistencePort.existsByArticleIdAndImageUrl(image.getArticleId(), image.getImageUrl())) {
-                log.debug("[IMAGE][SKIP] duplicate articleId={} imageUrl={}", image.getArticleId(), image.getImageUrl());
-                continue;
-            }
-            imagePersistencePort.save(image);
-            log.info("[IMAGE][SAVED] articleId={} position={}", image.getArticleId(), image.getPosition());
-        }
+        imagePersistencePort.saveAll(images);
+        log.info("[IMAGE][SAVED] count={}", images.size());
     }
 }

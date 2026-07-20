@@ -1,11 +1,11 @@
 package com.article.adapter.video.persistence;
 
 import com.article.adapter.video.mapper.VideoMapper;
-import com.article.domain.ArticleVideoRef;
-import com.article.domain.CategoryPendingCount;
-import com.article.domain.Video;
-import com.article.port.IdGenerationPort;
-import com.article.port.persistence.VideoPersistencePort;
+import com.article.domain.media.Video;
+import com.article.domain.media.DownloadStatus;
+import com.article.domain.media.VideoPlatform;
+import com.article.port.out.IdGenerationPort;
+import com.article.port.out.persistence.VideoPersistencePort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -17,14 +17,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class VideoPersistenceService implements VideoPersistencePort {
 
+    private static final List<VideoPlatform> DOWNLOADABLE_PLATFORMS =
+            List.of(VideoPlatform.JW_TOP, VideoPlatform.YOUTUBE);
+
     private final VideoRepository videoRepository;
     private final VideoMapper videoMapper;
     private final IdGenerationPort idGenerationPort;
 
     @Override
     public void save(Video video) {
-        video.setId(idGenerationPort.generateId());
-        videoRepository.save(videoMapper.toEntity(video));
+        videoRepository.save(videoMapper.toEntity(video, idGenerationPort.generateId()));
     }
 
     @Override
@@ -50,29 +52,29 @@ public class VideoPersistenceService implements VideoPersistencePort {
     }
 
     @Override
-    public List<CategoryPendingCount> findCategoriesOrderedByPendingCount() {
-        return videoRepository.findCategoriesOrderedByPendingCount();
-    }
-
-    @Override
-    public List<ArticleVideoRef> findPendingVideosForCategory(String category, int limit) {
-        return videoRepository.findPendingVideosForCategory(category, PageRequest.of(0, limit));
-    }
-
-    @Override
-    public List<ArticleVideoRef> findPendingVideosWithoutCategory(int limit) {
-        return videoRepository.findPendingVideosWithoutCategory(PageRequest.of(0, limit));
+    public List<Video> findPendingVideos(int limit) {
+        return videoRepository.findByDownloadStatusAndPlatformInOrderById(
+                        DownloadStatus.PENDING,
+                        DOWNLOADABLE_PLATFORMS,
+                        PageRequest.of(0, limit)
+                ).stream()
+                .map(videoMapper::toVideo)
+                .toList();
     }
 
     @Override
     @Transactional
     public void markDownloaded(String id, String localFilePath, long fileSize) {
-        videoRepository.markDownloaded(id, localFilePath, fileSize);
+        videoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Video not found: " + id))
+                .markDownloaded(localFilePath, fileSize);
     }
 
     @Override
     @Transactional
     public void markFailed(String id) {
-        videoRepository.markFailed(id);
+        videoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Video not found: " + id))
+                .markFailed();
     }
 }

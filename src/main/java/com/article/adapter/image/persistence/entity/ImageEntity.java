@@ -1,6 +1,6 @@
 package com.article.adapter.image.persistence.entity;
 
-import com.article.domain.status.DownloadStatus;
+import com.article.domain.media.DownloadStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -50,4 +50,14 @@ public class ImageEntity {
 
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+    public void markDownloaded(String path, long size) {
+        downloadStatus = DownloadStatus.DOWNLOADED;
+        localFilePath = path;
+        fileSize = size;
+    }
+
+    public void markFailed() {
+        downloadStatus = DownloadStatus.FAILED;
+    }
 }

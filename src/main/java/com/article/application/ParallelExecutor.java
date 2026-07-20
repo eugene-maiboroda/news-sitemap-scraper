@@ -1,7 +1,6 @@
 package com.article.application;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -10,7 +9,6 @@ import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ParallelExecutor {
@@ -19,7 +17,7 @@ public class ParallelExecutor {
 
     public <T> void execute(List<T> items, Consumer<T> consumer) {
         try {
-            List<Future<?>> futures = new ArrayList<>();
+            List<Future<?>> futures = new ArrayList<>(items.size());
             for (T item : items) {
                 futures.add(executor.submit(() -> consumer.accept(item)));
             }
@@ -28,10 +26,10 @@ public class ParallelExecutor {
             }
 
         } catch (InterruptedException e) {
-            log.warn("Parsing interrupted");
             Thread.currentThread().interrupt();
+            throw new IllegalStateException("Parallel execution was interrupted", e);
         } catch (ExecutionException e) {
-            log.error("Unexpected execution error", e);
+            throw new IllegalStateException("Parallel task failed", e.getCause());
         }
     }
 
@@ -47,26 +45,10 @@ public class ParallelExecutor {
             }
             return results;
         } catch (InterruptedException e) {
-            log.warn("Parsing interrupted");
             Thread.currentThread().interrupt();
-            return List.of();
+            throw new IllegalStateException("Parallel mapping was interrupted", e);
         } catch (ExecutionException e) {
-            log.error("Unexpected execution error", e);
-            return List.of();
-        }
-    }
-
-    private void shutdownExecutor(ExecutorService executor) {
-        executor.shutdown();
-        try {
-            if (!executor.awaitTermination(1, TimeUnit.HOURS)) {
-                log.warn("Forcing executor shutdown");
-                executor.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            executor.shutdownNow();
-            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Parallel mapping task failed", e.getCause());
         }
     }
 }
-

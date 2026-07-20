@@ -1,0 +1,48 @@
+package com.article.application;
+
+
+import com.article.domain.article.ArticleLink;
+import com.article.port.out.SitemapDiscoveryPort;
+import com.article.port.out.persistence.ArticlePersistencePort;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+@Slf4j
+@RequiredArgsConstructor
+public class DiscoverLinksUseCase {
+
+    private final ArticlePersistencePort articlePersistencePort;
+    private final SitemapDiscoveryPort sitemapDiscoveryPort;
+
+    public void discoverLinks(List<String> sitemapUrls, int batchSize) {
+        log.info("Step: DISCOVER LINKS");
+
+        if (sitemapUrls == null || sitemapUrls.isEmpty()) {
+            log.warn("No sitemap URLs configured. Add urls to collector.sitemap-urls in application.properties");
+            return;
+        }
+
+        log.info("NYPost Article Collector started | sitemaps={}", sitemapUrls.size());
+
+        for (String sitemapUrl : sitemapUrls) {
+            try {
+                List<ArticleLink> links = sitemapDiscoveryPort.discoverLinks(sitemapUrl);
+                insertInBatches(links, batchSize);
+                log.info("Discovered {} links from {}", links.size(), sitemapUrl);
+            } catch (Exception e) {
+                log.error("Failed to discover links from {}", sitemapUrl, e);
+            }
+        }
+    }
+
+    private void insertInBatches(List<ArticleLink> links, int batchSize) {
+        for (int from = 0; from < links.size(); from += batchSize) {
+            int to = Math.min(from + batchSize, links.size());
+            articlePersistencePort.insertLinks(links.subList(from, to));
+        }
+    }
+}

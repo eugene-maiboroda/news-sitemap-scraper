@@ -1,7 +1,7 @@
 package com.article.adapter.sitemap;
 
 import com.article.adapter.shared.ParseUtils;
-import com.article.domain.ArticleLink;
+import com.article.domain.article.ArticleLink;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;

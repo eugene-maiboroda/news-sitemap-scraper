@@ -1,6 +1,6 @@
 package com.article.adapter.video;
 
-import com.article.domain.Video;
+import com.article.domain.media.Video;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.Test;
@@ -37,9 +37,9 @@ class YoutubeVideoExtractorTest {
 
         assertTrue(result.isPresent());
         Video video = result.get();
-        assertEquals("1h6zr9iFnEA", video.getYoutubeVideoId());
-        assertEquals("https://img.youtube.com/vi/1h6zr9iFnEA/hqdefault.jpg", video.getThumbnailUrl());
-        assertEquals("abc123456", video.getArticleId());
+        assertEquals("1h6zr9iFnEA", video.youtubeVideoId());
+        assertEquals("https://img.youtube.com/vi/1h6zr9iFnEA/hqdefault.jpg", video.thumbnailUrl());
+        assertEquals("abc123456", video.articleId());
     }
 
     @Test

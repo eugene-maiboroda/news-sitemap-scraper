@@ -1,6 +1,5 @@
 package com.article.adapter.article.persistence.entity;
 
-import com.article.domain.status.CrawlStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -38,4 +37,14 @@ public class LinkArticleEntity {
 
     @Column(name = "error_message")
     private String errorMessage;
+
+    public void markParsed() {
+        status = CrawlStatus.PARSED;
+        errorMessage = null;
+    }
+
+    public void markFailed(String errorMessage) {
+        status = CrawlStatus.ERROR;
+        this.errorMessage = errorMessage;
+    }
 }

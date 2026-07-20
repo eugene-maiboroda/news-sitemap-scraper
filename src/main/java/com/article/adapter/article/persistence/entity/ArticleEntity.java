@@ -1,6 +1,6 @@
 package com.article.adapter.article.persistence.entity;
 
-import com.article.domain.ArticleLinkValue;
+import com.article.domain.article.TaxonomyLink;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -52,11 +52,11 @@ public class ArticleEntity {
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "topics", columnDefinition = "jsonb")
-    private List<ArticleLinkValue> topics;
+    private List<TaxonomyLink> topics;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "tags", columnDefinition = "jsonb")
-    private List<ArticleLinkValue> tags;
+    private List<TaxonomyLink> tags;
 
     @Column(name = "main_category")
     private String mainCategory;

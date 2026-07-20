@@ -1,12 +1,12 @@
 package com.article.adapter.video;
 
-import com.article.adapter.shared.ParseUtils;
+import com.article.adapter.shared.FileNaming;
 import com.article.bootstrap.properties.StorageProps;
 import com.article.bootstrap.properties.VideoProps;
-import com.article.domain.ArticleVideoRef;
-import com.article.domain.DownloadResult;
-import com.article.domain.status.VideoPlatform;
-import com.article.port.VideoDownloadPort;
+import com.article.application.dto.VideoDownloadData;
+import com.article.application.dto.DownloadResult;
+import com.article.domain.media.VideoPlatform;
+import com.article.port.out.VideoDownloadPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * Downloads video files via the external {@code yt-dlp} binary (a Java {@link ProcessBuilder}
  * invocation, mirroring how the Python reference script shells out to the same tool) — no
  * Playwright, no HTTP scraping, all inputs already come from the {@code videos} table. Supports
- * only JW Player ({@link ArticleVideoRef#m3u8Url()}) and YouTube ({@link ArticleVideoRef#youtubeVideoId()});
+ * only JW Player ({@link VideoDownloadData#m3u8Url()}) and YouTube ({@link VideoDownloadData#youtubeVideoId()});
  * Connatix is out of scope and never resolves to a URL here.
  */
 @Slf4j
@@ -38,17 +38,21 @@ public class VideoDownloadAdapter implements VideoDownloadPort {
     private final VideoProps videoProps;
 
     @Override
-    public DownloadResult download(ArticleVideoRef ref) {
-        String url = resolveUrl(ref);
+    public DownloadResult download(VideoDownloadData data) {
+        String url = resolveUrl(data);
         if (url == null) {
-            log.warn("[VIDEO][SKIP] Missing source data id={} platform={}", ref.id(), ref.platform());
+            log.warn("[VIDEO][SKIP] Missing source data id={} platform={}", data.id(), data.platform());
             return DownloadResult.failed();
         }
 
         try {
-            Path dir = Path.of(storageProps.videosDir(), ParseUtils.categorySlug(ref.category()));
-            String prefix = ParseUtils.videoFilePrefix(
-                    ref.category(), ref.articleId(), ref.platform().name(), ParseUtils.shortId(ref.id()));
+            Path dir = Path.of(storageProps.videosDir(), FileNaming.categorySlug(data.category()));
+            String prefix = FileNaming.videoFilePrefix(
+                    data.category(),
+                    data.articleId(),
+                    data.platform().name(),
+                    FileNaming.shortId(data.id())
+            );
             Path target = dir.resolve(prefix + ".mp4");
 
             if (isValidFile(target)) {
@@ -58,17 +62,19 @@ public class VideoDownloadAdapter implements VideoDownloadPort {
 
             Files.createDirectories(dir);
 
-            List<String> command = List.of(
+            List<String> processCommand = List.of(
                     videoProps.ytDlpCommand(),
                     url,
                     "-o", dir.resolve(prefix + ".%(ext)s").toString(),
                     "--no-playlist",
                     "--merge-output-format", "mp4");
 
-            log.info(ref.platform() == VideoPlatform.YOUTUBE ? "Downloading YouTube:\n{}" : "Downloading JW video:\n{}", url);
-            log.info("Executing:\n{}", String.join(" ", command));
+            log.info(data.platform() == VideoPlatform.YOUTUBE
+                    ? "Downloading YouTube:\n{}"
+                    : "Downloading JW video:\n{}", url);
+            log.info("Executing:\n{}", String.join(" ", processCommand));
 
-            Process process = new ProcessBuilder(command)
+            Process process = new ProcessBuilder(processCommand)
                     .redirectErrorStream(true)
                     .start();
             closeQuietly(process.getOutputStream());
@@ -87,16 +93,16 @@ public class VideoDownloadAdapter implements VideoDownloadPort {
             }
             return DownloadResult.failed();
         } catch (Exception e) {
-            log.warn("[VIDEO][FAIL] id={} url={}", ref.articleId(), url, e);
+            log.warn("[VIDEO][FAIL] id={} url={}", data.articleId(), url, e);
             return DownloadResult.failed();
         }
     }
 
-    private String resolveUrl(ArticleVideoRef ref) {
-        return switch (ref.platform()) {
-            case JW_TOP -> StringUtils.hasText(ref.m3u8Url()) ? ref.m3u8Url() : null;
-            case YOUTUBE -> StringUtils.hasText(ref.youtubeVideoId())
-                    ? "https://www.youtube.com/watch?v=" + ref.youtubeVideoId()
+    private String resolveUrl(VideoDownloadData data) {
+        return switch (data.platform()) {
+            case JW_TOP -> StringUtils.hasText(data.m3u8Url()) ? data.m3u8Url() : null;
+            case YOUTUBE -> StringUtils.hasText(data.youtubeVideoId())
+                    ? "https://www.youtube.com/watch?v=" + data.youtubeVideoId()
                     : null;
             case CONNATIX_BOTTOM -> null;
         };

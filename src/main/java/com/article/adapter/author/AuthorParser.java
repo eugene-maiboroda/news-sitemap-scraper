@@ -2,20 +2,20 @@ package com.article.adapter.author;
 
 import com.article.adapter.http.HttpContentLoader;
 import com.article.adapter.shared.ParseUtils;
-import com.article.domain.Author;
-import com.article.domain.AuthorParseResult;
-import com.article.port.AuthorParserPort;
+import com.article.domain.author.Author;
+import com.article.application.dto.AuthorParseResult;
+import com.article.port.out.AuthorParserPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpStatusCodeException;
 
 @Slf4j
-@Service
+@Component
 @RequiredArgsConstructor
 public class AuthorParser implements AuthorParserPort {
 

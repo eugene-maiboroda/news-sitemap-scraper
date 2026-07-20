@@ -1,10 +1,10 @@
 package com.article.adapter.video;
 
 import com.article.adapter.http.HttpContentLoader;
-import com.article.domain.status.DownloadStatus;
-import com.article.domain.Video;
-import com.article.domain.status.VideoPlatform;
-import com.article.port.BrowserPort;
+import com.article.domain.media.DownloadStatus;
+import com.article.domain.media.Video;
+import com.article.domain.media.VideoPlatform;
+import com.article.port.out.BrowserPort;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -68,17 +68,17 @@ class ConnatixVideoExtractorTest {
                 .thenReturn(Optional.of(plsBody));
         when(httpContentLoader.download(anyString())).thenReturn(encodeField17(mmid));
 
-        Optional<Video> result = extractor.extract("article-id-1", ARTICLE_URL);
+        Optional<Video> result = extractor.extract(null, "article-id-1", ARTICLE_URL);
 
         assertTrue(result.isPresent());
         Video video = result.get();
-        assertEquals(VideoPlatform.CONNATIX_BOTTOM, video.getPlatform());
-        assertEquals("article-id-1", video.getArticleId());
-        assertEquals(contentId, video.getConnatixContentId());
-        assertEquals(streamId, video.getConnatixStreamId());
-        assertEquals(mmid, video.getConnatixMmid());
-        assertEquals("https://vid.connatix.com/%s/%s/mmid-%s/playlist.m3u8".formatted(contentId, streamId, mmid), video.getM3u8Url());
-        assertEquals(DownloadStatus.PENDING, video.getDownloadStatus());
+        assertEquals(VideoPlatform.CONNATIX_BOTTOM, video.platform());
+        assertEquals("article-id-1", video.articleId());
+        assertEquals(contentId, video.connatixContentId());
+        assertEquals(streamId, video.connatixStreamId());
+        assertEquals(mmid, video.connatixMmid());
+        assertEquals("https://vid.connatix.com/%s/%s/mmid-%s/playlist.m3u8".formatted(contentId, streamId, mmid), video.m3u8Url());
+        assertEquals(DownloadStatus.PENDING, video.downloadStatus());
         // exact endpoint per the verified Python reference — no "/api/v1/" prefix, that variant 403s
         verify(httpContentLoader).download("https://vid.connatix.com/%s/%s/2_media.bin".formatted(contentId, streamId));
     }
@@ -88,7 +88,7 @@ class ConnatixVideoExtractorTest {
         when(browserPort.interceptResponseBody(anyString(), anyString(), any(), anyString()))
                 .thenReturn(Optional.empty());
 
-        Optional<Video> result = extractor.extract("article-id-1", ARTICLE_URL);
+        Optional<Video> result = extractor.extract(null, "article-id-1", ARTICLE_URL);
         assertTrue(result.isEmpty());
     }
 
@@ -103,7 +103,7 @@ class ConnatixVideoExtractorTest {
                 .thenReturn(Optional.of(plsText.getBytes(StandardCharsets.ISO_8859_1)));
         when(httpContentLoader.download(anyString())).thenReturn(new byte[0]);
 
-        Optional<Video> result = extractor.extract("article-id-1", ARTICLE_URL);
+        Optional<Video> result = extractor.extract(null, "article-id-1", ARTICLE_URL);
         assertTrue(result.isEmpty());
     }
 

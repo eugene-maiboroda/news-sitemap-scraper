@@ -1,7 +1,7 @@
 package com.article.adapter.video.persistence.entity;
 
-import com.article.domain.status.DownloadStatus;
-import com.article.domain.status.VideoPlatform;
+import com.article.domain.media.DownloadStatus;
+import com.article.domain.media.VideoPlatform;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -79,4 +79,14 @@ public class VideoEntity {
 
     @CreationTimestamp
     private LocalDateTime createdAt;
+
+    public void markDownloaded(String localFilePath, long fileSize) {
+        this.downloadStatus = DownloadStatus.DOWNLOADED;
+        this.localFilePath = localFilePath;
+        this.fileSize = fileSize;
+    }
+
+    public void markFailed() {
+        this.downloadStatus = DownloadStatus.FAILED;
+    }
 }

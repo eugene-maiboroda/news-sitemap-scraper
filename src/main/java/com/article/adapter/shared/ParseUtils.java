@@ -3,18 +3,17 @@ package com.article.adapter.shared;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ParseUtils {
+public final class ParseUtils {
+
+    private ParseUtils() {
+    }
 
     public static final String EMPTY = "";
     private static final Pattern SRCSET_SPLIT = Pattern.compile("\\s*,\\s*(?=https?://)");
@@ -130,81 +129,6 @@ public class ParseUtils {
     public static Optional<String> wpImageId(Element img) {
         Matcher m = WP_IMAGE_ID.matcher(img.attr("class"));
         return m.find() ? Optional.of(m.group(1)) : Optional.empty();
-    }
-
-    public static String categorySlug(String category) {
-        return (category == null || category.isBlank())
-                ? "uncategorized"
-                : category.toLowerCase()
-                .replaceAll("[^a-z0-9]+", "_")
-                .replaceAll("^_+|_+$", "");
-    }
-
-    public static String imageFilePrefix(String category, String articleId, Integer position) {
-        return categorySlug(category) + "_" + articleId + "_img_" + position;
-    }
-    public static String videoFilePrefix(String category, String articleId, String platform, String videoId) {
-        return categorySlug(category) + "_" + articleId + "_video_" + platform.toLowerCase() + "_" + videoId;
-    }
-
-    /** Deterministic id for an author's avatar file, keyed off the stable author id — reused as-is
-     *  by the future avatar-download step, so a file saved from this prefix always matches the
-     *  avatarId already written into the author export JSON. */
-    public static String avatarFilePrefix(String authorId) {
-        return "author_" + authorId + "_avatar";
-    }
-
-    /** File extension inferred from a media URL's path (ignoring query params), defaulting to
-     *  {@code .jpg} when none is present — shared by every download adapter that saves a URL's
-     *  bytes under a deterministic *FilePrefix name (see ImageDownloadAdapter, avatar download). */
-    public static String resolveExtension(String url) {
-        int question = url.indexOf('?');
-        String clean = question == -1 ? url : url.substring(0, question);
-
-        int dot = clean.lastIndexOf('.');
-        return dot == -1 ? ".jpg" : clean.substring(dot);
-    }
-
-    public static String shortId(String id) {
-        if (id == null || id.isBlank()) {
-            return "unknown";
-        }
-        return id.length() <= 8 ? id : id.substring(0, 8);
-    }
-
-    /**
-     * Builds a topic-file display hierarchy from a main category and an ordered list of topic
-     * names, skipping null/blank entries and collapsing an entry that repeats the immediately
-     * preceding one (e.g. main category equals the first topic name), and doing the same for any
-     * adjacent repeat deeper in the hierarchy.
-     */
-    public static List<String> buildHierarchy(String mainCategory, List<String> topicNames) {
-        List<String> hierarchy = new ArrayList<>();
-        addIfNewAndNotBlank(hierarchy, mainCategory);
-        for (String name : topicNames) {
-            addIfNewAndNotBlank(hierarchy, name);
-        }
-        return List.copyOf(hierarchy);
-    }
-
-    private static void addIfNewAndNotBlank(List<String> hierarchy, String name) {
-        if (name == null || name.isBlank()) {
-            return;
-        }
-        if (!hierarchy.isEmpty() && hierarchy.get(hierarchy.size() - 1).equals(name)) {
-            return;
-        }
-        hierarchy.add(name);
-    }
-
-    /** SHA-256 based, not {@code String.hashCode()} — must stay stable across JVM runs/versions. */
-    public static String shortHash(String value) {
-        try {
-            byte[] hash = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(hash, 0, 5);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
     }
 
     private static boolean hasWpImageClass(Element img) {

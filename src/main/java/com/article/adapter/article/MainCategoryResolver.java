@@ -9,19 +9,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Predicate;
 
-/**
- * Determines an article's top-level NY Post menu category from its first extracted topic.
- * Deliberately conservative: an unrecognized topic resolves to {@code null} rather than being
- * echoed back as a fabricated main category (see {@link #resolve}).
- */
 @Slf4j
 @Component
 public class MainCategoryResolver {
 
     private static final Map<String, String> MAIN_CATEGORY_BY_TOPIC = buildMapping();
 
-    // Checked before the name-based mapping — some categories (Post Sports+) render as a logo/SVG
-    // rather than text, so the URL is the only reliable signal. New URL-based rules go here.
+
     private static final List<UrlRule> URL_RULES = List.of(
             new UrlRule(url -> url != null && url.contains("/sports-plus/"), "Post Sports+")
     );
@@ -42,14 +36,12 @@ public class MainCategoryResolver {
         return mainCategory;
     }
 
-    // Normalization is only used for map lookup — the original topic text is stored as-is.
     private static String normalize(String value) {
         return value.trim().replace('’', '\'').toLowerCase(Locale.ROOT);
     }
 
     private static Map<String, String> buildMapping() {
         Map<String, String> map = new HashMap<>();
-        // --- child topic -> main category ---
         put(map, "Sports", "NBA", "NFL", "MLB", "Olympics", "NHL",
                 "College Football", "College Basketball", "WNBA");
         put(map, "Sports Betting", "Betting");
@@ -60,7 +52,6 @@ public class MainCategoryResolver {
                 "Men's Health", "Women's Health", "Mental Health", "Nutrition");
         put(map, "Science", "Space", "Environment", "Wildlife", "Archaeology");
         put(map, "US News", "Metro", "Long Island", "Politics");
-        // --- top-level categories that are already their own canonical main_category ---
         put(map, "US News", "US News");
         put(map, "World News", "World News");
         put(map, "Page Six", "Page Six");
@@ -83,7 +74,6 @@ public class MainCategoryResolver {
         put(map, "Photos", "Photos");
         put(map, "Pod Force One", "Pod Force One");
         put(map, "NY POSTcast", "NY POSTcast");
-        // --- additional child topics found during verification ---
         put(map, "Sports", "Sports Entertainment", "Golf", "Soccer", "Tennis",
                 "Boxing", "Wrestling", "MMA", "NWSL", "PWHL", "Sports Video");
         put(map, "Entertainment", "Ticket Sales");

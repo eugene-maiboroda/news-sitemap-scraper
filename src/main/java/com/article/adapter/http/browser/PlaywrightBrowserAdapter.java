@@ -1,7 +1,7 @@
 package com.article.adapter.http.browser;
 
 import com.article.bootstrap.properties.BrowserProps;
-import com.article.port.BrowserPort;
+import com.article.port.out.BrowserPort;
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Locator;

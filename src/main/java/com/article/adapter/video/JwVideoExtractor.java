@@ -1,14 +1,15 @@
 package com.article.adapter.video;
 
-import com.article.domain.status.DownloadStatus;
-import com.article.domain.Video;
-import com.article.domain.status.VideoPlatform;
+import com.article.domain.media.DownloadStatus;
+import com.article.domain.media.Video;
+import com.article.domain.media.VideoPlatform;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -32,6 +33,7 @@ import java.util.regex.Pattern;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@Order(10)
 public class JwVideoExtractor implements VideoExtractor {
 
     private static final Pattern MANIFEST_ID = Pattern.compile("cdn\\.jwplayer\\.com/manifests/([A-Za-z0-9]{8})\\.m3u8");

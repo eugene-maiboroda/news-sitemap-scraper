@@ -7,6 +7,7 @@ import java.util.List;
 @ConfigurationProperties(prefix = "collector")
 public record CollectorProps(
         int parseThreads,
+        long sitemapDelayMs,
         List<String> sitemapUrls
 ) {
 }

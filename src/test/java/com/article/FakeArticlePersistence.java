@@ -1,12 +1,13 @@
 package com.article;
 
-import com.article.domain.Article;
-import com.article.domain.ArticleLink;
-import com.article.domain.ArticleWithMetadata;
-import com.article.domain.Author;
-import com.article.port.persistence.ArticlePersistencePort;
+import com.article.domain.article.Article;
+import com.article.domain.article.ArticleLink;
+import com.article.domain.article.ArticleMetadata;
+import com.article.domain.article.ArticleWithMetadata;
+import com.article.port.out.persistence.ArticlePersistencePort;
 
 import java.util.List;
+import java.util.Map;
 
 public class FakeArticlePersistence implements ArticlePersistencePort {
 
@@ -25,7 +26,11 @@ public class FakeArticlePersistence implements ArticlePersistencePort {
     }
 
     @Override
-    public void saveArticleAndMarkParsed(Article article, String articleUrl) {
+    public void saveArticleAndMarkParsed(
+            Article article,
+            ArticleMetadata metadata,
+            String articleUrl
+    ) {
         System.out.println("PARSED: " + article.title());
     }
 
@@ -35,27 +40,12 @@ public class FakeArticlePersistence implements ArticlePersistencePort {
     }
 
     @Override
-    public List<String> findDistinctCategories() {
+    public List<ArticleWithMetadata> findArticlesForExport(int page, int pageSize) {
         return List.of();
     }
 
     @Override
-    public List<ArticleWithMetadata> findArticlesByCategory(String category, int page, int pageSize) {
-        return List.of();
-    }
-
-    @Override
-    public List<ArticleWithMetadata> findArticlesWithoutCategory(int page, int pageSize) {
-        return List.of();
-    }
-
-    @Override
-    public List<ArticleWithMetadata> findAllArticlesOrdered(int page, int pageSize) {
-        return List.of();
-    }
-
-    @Override
-    public List<Author> findDistinctAuthors() {
-        return List.of();
+    public Map<String, String> findCategoriesByArticleIds(List<String> articleIds) {
+        return Map.of();
     }
 }

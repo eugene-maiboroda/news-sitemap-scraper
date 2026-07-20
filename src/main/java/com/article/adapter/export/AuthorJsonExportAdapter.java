@@ -1,8 +1,9 @@
 package com.article.adapter.export;
 
+import com.article.adapter.export.mapper.AuthorExportMapper;
 import com.article.bootstrap.properties.StorageProps;
-import com.article.domain.Author;
-import com.article.port.AuthorExportPort;
+import com.article.domain.author.Author;
+import com.article.port.out.AuthorExportPort;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,19 +40,20 @@ public class AuthorJsonExportAdapter implements AuthorExportPort {
             Path exportDir = Path.of(storageProps.exportDir());
             Files.createDirectories(exportDir);
 
-            JsonGenerator generator = objectMapper.getFactory().createGenerator(
-                    exportDir.resolve(FILE_NAME).toFile(), JsonEncoding.UTF8);
-            generator.useDefaultPrettyPrinter();
-            generator.writeStartObject();
-            generator.writeArrayFieldStart("authors");
+            try (JsonGenerator generator = objectMapper.getFactory().createGenerator(
+                    exportDir.resolve(FILE_NAME).toFile(), JsonEncoding.UTF8
+            )) {
+                generator.useDefaultPrettyPrinter();
+                generator.writeStartObject();
+                generator.writeArrayFieldStart("authors");
 
-            for (Author author : authors) {
-                objectMapper.writeValue(generator, authorExportMapper.toDto(author));
+                for (Author author : authors) {
+                    objectMapper.writeValue(generator, authorExportMapper.toDto(author));
+                }
+
+                generator.writeEndArray();
+                generator.writeEndObject();
             }
-
-            generator.writeEndArray();
-            generator.writeEndObject();
-            generator.close();
 
             log.info("[EXPORT][authors] {} -> {} authors", FILE_NAME, authors.size());
         } catch (IOException e) {

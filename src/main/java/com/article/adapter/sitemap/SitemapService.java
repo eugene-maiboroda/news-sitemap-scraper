@@ -1,8 +1,9 @@
 package com.article.adapter.sitemap;
 
 import com.article.adapter.http.HttpContentLoader;
-import com.article.domain.ArticleLink;
-import com.article.port.SitemapPort;
+import com.article.bootstrap.properties.CollectorProps;
+import com.article.domain.article.ArticleLink;
+import com.article.port.out.SitemapDiscoveryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -13,11 +14,12 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class SitemapService implements SitemapPort {
+public class SitemapService implements SitemapDiscoveryPort {
 
     private final HttpContentLoader contentLoader;
     private final NyPostYearSitemapParser yearSitemapParser;
     private final NyPostDaySitemapParser daySitemapParser;
+    private final CollectorProps collectorProps;
 
     @Override
     public List<ArticleLink> discoverLinks(String sitemapUrl) {
@@ -28,9 +30,13 @@ public class SitemapService implements SitemapPort {
         List<ArticleLink> allLinks = new ArrayList<>();
         for (String dayUrl : dayUrls) {
             try {
-                Thread.sleep(150);
+                Thread.sleep(collectorProps.sitemapDelayMs());
                 String dayXml = contentLoader.loadText(dayUrl);
                 allLinks.addAll(daySitemapParser.parseLinks(dayXml));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("Sitemap discovery interrupted");
+                break;
             } catch (Exception e) {
                 log.warn("Failed to fetch day sitemap: {}", dayUrl, e);
             }

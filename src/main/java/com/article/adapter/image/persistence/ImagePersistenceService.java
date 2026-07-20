@@ -1,17 +1,19 @@
 package com.article.adapter.image.persistence;
 
 import com.article.adapter.image.mapper.ImageMapper;
-import com.article.domain.ArticleImageRef;
-import com.article.domain.CategoryPendingCount;
-import com.article.domain.Image;
-import com.article.port.IdGenerationPort;
-import com.article.port.persistence.ImagePersistencePort;
+import com.article.adapter.image.persistence.entity.ImageEntity;
+import com.article.domain.media.Image;
+import com.article.domain.media.DownloadStatus;
+import com.article.port.out.IdGenerationPort;
+import com.article.port.out.persistence.ImagePersistencePort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,14 +24,23 @@ public class ImagePersistenceService implements ImagePersistencePort {
     private final IdGenerationPort idGenerationPort;
 
     @Override
-    public void save(Image image) {
-        image.setId(idGenerationPort.generateId());
-        imageRepository.save(imageMapper.toEntity(image));
-    }
+    public void saveAll(List<Image> images) {
+        if (images.isEmpty()) {
+            return;
+        }
+        List<String> articleIds = images.stream()
+                .map(Image::articleId)
+                .distinct()
+                .toList();
+        Set<ImageKey> existing = imageRepository.findByArticleIdIn(articleIds).stream()
+                .map(entity -> new ImageKey(entity.getArticleId(), entity.getImageUrl()))
+                .collect(Collectors.toSet());
 
-    @Override
-    public boolean existsByArticleIdAndImageUrl(String articleId, String imageUrl) {
-        return imageRepository.existsByArticleIdAndImageUrl(articleId, imageUrl);
+        List<ImageEntity> newImages = images.stream()
+                .filter(image -> existing.add(new ImageKey(image.articleId(), image.imageUrl())))
+                .map(image -> imageMapper.toEntity(image, idGenerationPort.generateId()))
+                .toList();
+        imageRepository.saveAll(newImages);
     }
 
     @Override
@@ -40,29 +51,31 @@ public class ImagePersistenceService implements ImagePersistencePort {
     }
 
     @Override
-    public List<CategoryPendingCount> findCategoriesOrderedByPendingCount() {
-        return imageRepository.findCategoriesOrderedByPendingCount();
-    }
-
-    @Override
-    public List<ArticleImageRef> findPendingImagesForCategory(String category, int limit) {
-        return imageRepository.findPendingImagesForCategory(category, PageRequest.of(0, limit));
-    }
-
-    @Override
-    public List<ArticleImageRef> findPendingImagesWithoutCategory(int limit) {
-        return imageRepository.findPendingImagesWithoutCategory(PageRequest.of(0, limit));
+    public List<Image> findPendingImages(int limit) {
+        return imageRepository.findByDownloadStatusOrderById(
+                        DownloadStatus.PENDING,
+                        PageRequest.of(0, limit)
+                ).stream()
+                .map(imageMapper::toImage)
+                .toList();
     }
 
     @Override
     @Transactional
     public void markDownloaded(String id, String localFilePath, long fileSize) {
-        imageRepository.markDownloaded(id, localFilePath, fileSize);
+        imageRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Image not found: " + id))
+                .markDownloaded(localFilePath, fileSize);
     }
 
     @Override
     @Transactional
     public void markFailed(String id) {
-        imageRepository.markFailed(id);
+        imageRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Image not found: " + id))
+                .markFailed();
+    }
+
+    private record ImageKey(String articleId, String imageUrl) {
     }
 }

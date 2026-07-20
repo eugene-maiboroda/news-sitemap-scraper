@@ -1,15 +1,13 @@
 package com.article.application;
 
-import com.article.adapter.author.AuthorParser;
-import com.article.adapter.shared.ParseUtils;
-import com.article.domain.Author;
-import com.article.domain.AuthorParseResult;
-import com.article.domain.DownloadResult;
-import com.article.domain.status.DownloadStatus;
-import com.article.port.persistence.ArticlePersistencePort;
-import com.article.port.AuthorAvatarDownloadPort;
-import com.article.port.AuthorExportPort;
-import com.article.port.persistence.AuthorPersistencePort;
+import com.article.domain.author.Author;
+import com.article.application.dto.AuthorParseResult;
+import com.article.application.dto.DownloadResult;
+import com.article.domain.media.DownloadStatus;
+import com.article.port.out.AuthorAvatarDownloadPort;
+import com.article.port.out.AuthorExportPort;
+import com.article.port.out.AuthorParserPort;
+import com.article.port.out.persistence.AuthorPersistencePort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,27 +19,45 @@ import java.util.List;
 @Slf4j
 public class AuthorUseCase {
 
-    private final ArticlePersistencePort articlePersistencePort;
     private final AuthorPersistencePort authorPersistencePort;
-    private final AuthorParser authorParser;
+    private final AuthorParserPort authorParser;
     private final ParallelExecutor parallelExecutor;
     private final AuthorExportPort authorExportPort;
     private final AuthorAvatarDownloadPort authorAvatarDownloadPort;
 
-    public void extractAuthorsFromArticle() {
-        List<Author> authors = articlePersistencePort.findDistinctAuthors();
-        authorPersistencePort.insert(authors);
+    public void processAuthors(int batchSize) {
+        log.info("Step: PROCESS AUTHORS");
+        int extracted = extractAuthorsFromArticle(batchSize);
+        int parsed = parseAuthors();
+        int avatars = downloadAvatars();
+        log.info(
+                "Author processing finished ({} candidates processed, {} parsed, {} avatars downloaded)",
+                extracted,
+                parsed,
+                avatars
+        );
     }
 
-    public void parseAuthors() {
+    private int extractAuthorsFromArticle(int batchSize) {
+        int page = 0;
+        int extracted = 0;
+        List<Author> authors;
+        while (!(authors = authorPersistencePort.findCandidates(page, batchSize)).isEmpty()) {
+            authorPersistencePort.insert(authors);
+            extracted += authors.size();
+            page++;
+        }
+        return extracted;
+    }
+
+    private int parseAuthors() {
         List<Author> authors = authorPersistencePort.findAll();
-
         List<Author> updatedAuthors = parallelExecutor.map(authors, this::enrichAuthor);
-
         authorPersistencePort.update(updatedAuthors);
+        return updatedAuthors.size();
     }
 
-    public void downloadAvatars() {
+    private int downloadAvatars() {
         List<Author> pending = authorPersistencePort.findAuthorsPendingAvatarDownload();
 
         List<Author> downloaded = parallelExecutor.map(pending, this::downloadAvatar).stream()
@@ -49,11 +65,14 @@ public class AuthorUseCase {
                 .toList();
 
         authorPersistencePort.update(downloaded);
+        return downloaded.size();
     }
 
     public void exportAuthors() {
+        log.info("Step: EXPORT AUTHORS");
         List<Author> authors = authorPersistencePort.findAll();
         authorExportPort.export(authors);
+        log.info("Author export finished ({} authors)", authors.size());
     }
 
     private Author enrichAuthor(Author author) {
@@ -79,6 +98,6 @@ public class AuthorUseCase {
                 author.authorUrl(),
                 author.bio(),
                 author.avatarUrl(),
-                ParseUtils.avatarFilePrefix(author.id()));
+                result.storedFileId());
     }
 }

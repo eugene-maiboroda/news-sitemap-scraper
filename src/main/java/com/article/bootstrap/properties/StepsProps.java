@@ -6,17 +6,23 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record StepsProps(
         Step discoverLinks,
         Step parsePages,
-        Step extractMetadata,
         Step downloadImages,
         Step downloadVideos,
+        Step processAuthors,
+        ToggleStep exportAuthors,
         Step exportJson,
-        Step extractConnatixVideos
+        ToggleStep extractConnatixVideos
 ) {
 
     public record Step(
             boolean enabled,
             int batchSize
 
+    ) {
+    }
+
+    public record ToggleStep(
+            boolean enabled
     ) {
     }
 }

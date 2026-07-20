@@ -1,6 +1,6 @@
 package com.article.adapter.video;
 
-import com.article.domain.Video;
+import com.article.domain.media.Video;
 import org.jsoup.nodes.Document;
 
 import java.util.Optional;

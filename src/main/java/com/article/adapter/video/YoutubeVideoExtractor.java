@@ -1,10 +1,11 @@
 package com.article.adapter.video;
 
-import com.article.domain.status.DownloadStatus;
-import com.article.domain.Video;
-import com.article.domain.status.VideoPlatform;
+import com.article.domain.media.DownloadStatus;
+import com.article.domain.media.Video;
+import com.article.domain.media.VideoPlatform;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -20,6 +21,7 @@ import java.util.regex.Pattern;
  * from the HTML and are left for a later metadata step (oEmbed/API/yt-dlp).
  */
 @Component
+@Order(20)
 public class YoutubeVideoExtractor implements VideoExtractor {
 
     private static final String YOUTUBE_EMBED_SELECTOR = "figure.is-provider-youtube iframe";

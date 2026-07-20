@@ -2,13 +2,15 @@ package com.article.adapter.video;
 
 import com.article.adapter.http.HttpContentLoader;
 import com.article.adapter.video.decoder.MediaBinDecoder;
-import com.article.domain.status.DownloadStatus;
-import com.article.domain.Video;
-import com.article.domain.status.VideoPlatform;
-import com.article.port.BrowserPort;
+import com.article.domain.media.DownloadStatus;
+import com.article.domain.media.Video;
+import com.article.domain.media.VideoPlatform;
+import com.article.port.out.BrowserPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.annotation.Order;
+import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -29,7 +31,9 @@ import java.util.regex.Pattern;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "browser", name = "enabled", havingValue = "true")
-public class ConnatixVideoExtractor {
+@ConditionalOnProperty(prefix = "steps.extract-connatix-videos", name = "enabled", havingValue = "true")
+@Order(30)
+public class ConnatixVideoExtractor implements VideoExtractor {
 
     private static final String PLS_URL_CONTAINS = "capi.connatix.com/core/pls";
     private static final String CONNATIX_PLAYER_SELECTOR = "#connatix-outstream-video";
@@ -45,7 +49,8 @@ public class ConnatixVideoExtractor {
     private final BrowserPort browserPort;
     private final HttpContentLoader httpContentLoader;
 
-    public Optional<Video> extract(String articleId, String articleUrl) {
+    @Override
+    public Optional<Video> extract(Document document, String articleId, String articleUrl) {
         Optional<byte[]> plsBody = browserPort.interceptResponseBody(
                 articleUrl, PLS_URL_CONTAINS, COOKIE_CONSENT_SELECTORS, CONNATIX_PLAYER_SELECTOR);
         if (plsBody.isEmpty()) {

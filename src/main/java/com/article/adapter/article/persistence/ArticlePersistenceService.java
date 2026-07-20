@@ -1,13 +1,14 @@
 package com.article.adapter.article.persistence;
 
 import com.article.adapter.article.mapper.ArticleMapper;
-import com.article.domain.Article;
-import com.article.domain.ArticleLink;
-import com.article.domain.ArticleWithMetadata;
-import com.article.domain.Author;
-import com.article.domain.status.CrawlStatus;
-import com.article.port.persistence.ArticlePersistencePort;
-import com.article.port.IdGenerationPort;
+import com.article.adapter.article.persistence.entity.CrawlStatus;
+import com.article.adapter.article.persistence.entity.LinkArticleEntity;
+import com.article.domain.article.Article;
+import com.article.domain.article.ArticleLink;
+import com.article.domain.article.ArticleMetadata;
+import com.article.domain.article.ArticleWithMetadata;
+import com.article.port.out.persistence.ArticlePersistencePort;
+import com.article.port.out.IdGenerationPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -15,7 +16,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -37,8 +40,11 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
     @Override
     @Transactional
     public void insertLinks(List<ArticleLink> links) {
+        if (links.isEmpty()) {
+            return;
+        }
         long start = System.currentTimeMillis();
-        jdbcTemplate.batchUpdate(BULK_INSERT_SQL, links, 1000, (ps, link) -> {
+        jdbcTemplate.batchUpdate(BULK_INSERT_SQL, links, links.size(), (ps, link) -> {
             ps.setString(1, idGenerationPort.generateId());
             ps.setString(2, link.articleUrl());
             ps.setObject(3, link.articleDate());
@@ -54,51 +60,39 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
 
     @Override
     @Transactional
-    public void saveArticleAndMarkParsed(Article article, String articleUrl) {
-        articleRepository.save(articleMapper.toEntity(article));
-        linkRepository.updateStatus(articleUrl, CrawlStatus.PARSED);
+    public void saveArticleAndMarkParsed(
+            Article article,
+            ArticleMetadata metadata,
+        String articleUrl
+    ) {
+        articleRepository.save(articleMapper.toEntity(article, metadata));
+        findLink(articleUrl).markParsed();
     }
 
     @Override
     @Transactional
     public void markError(String articleUrl, String errorMessage) {
-        linkRepository.updateStatusWithError(articleUrl, CrawlStatus.ERROR, errorMessage);
+        findLink(articleUrl).markFailed(errorMessage);
     }
 
     @Override
-    public List<String> findDistinctCategories() {
-        return articleRepository.findDistinctCategories();
-    }
-
-    @Override
-    public List<ArticleWithMetadata> findArticlesByCategory(String category, int page, int pageSize) {
+    public List<ArticleWithMetadata> findArticlesForExport(int page, int pageSize) {
         return articleMapper.toArticlesWithMetadata(
-                articleRepository.findByCategoryOrderById(category, PageRequest.of(page, pageSize)));
+                articleRepository.findAllByOrderByPublishDateAscIdAsc(
+                        PageRequest.of(page, pageSize)
+                ));
     }
 
     @Override
-    public List<ArticleWithMetadata> findArticlesWithoutCategory(int page, int pageSize) {
-        return articleMapper.toArticlesWithMetadata(
-                articleRepository.findArticlesWithoutCategory(PageRequest.of(page, pageSize)));
+    public Map<String, String> findCategoriesByArticleIds(List<String> articleIds) {
+        Map<String, String> categories = new HashMap<>();
+        articleRepository.findAllById(articleIds)
+                .forEach(article -> categories.put(article.getId(), article.getCategory()));
+        return categories;
     }
 
-    @Override
-    public List<ArticleWithMetadata> findAllArticlesOrdered(int page, int pageSize) {
-        return articleMapper.toArticlesWithMetadata(
-                articleRepository.findAllByOrderById(PageRequest.of(page, pageSize)));
-    }
-
-    @Override
-    public List<Author> findDistinctAuthors() {
-        return articleRepository.findDistinctAuthors().stream()
-                .map(row -> new Author(
-                        idGenerationPort.generateId(),
-                        row.getAuthorName(),
-                        row.getAuthorUrl(),
-                        null,
-                        null,
-                        null
-                ))
-                .toList();
+    private LinkArticleEntity findLink(String articleUrl) {
+        return linkRepository.findByArticleUrl(articleUrl)
+                .orElseThrow(() -> new IllegalArgumentException("Article link not found: " + articleUrl));
     }
 }
