@@ -8,9 +8,9 @@ import java.util.List;
  * Fixed, hardcoded Sports Betting export targets — unlike {@link com.article.domain.TopicTarget},
  * these are NOT derived from any stored data. Sports Betting pages don't carry enough navigation
  * information to reconstruct a hierarchy from an article's topics, so the URL/hierarchy/required
- * tag are known constants instead. Membership is decided purely from tags already extracted by
- * {@link com.article.adapter.article.TopicsTagsExtractor} (an article matches a target only if it
- * carries both the generic "Sports Betting" tag and this target's league-specific tag).
+ * tag are known constants instead. Membership is decided from stored tags: an article matches a
+ * target only if it carries both the generic "Sports Betting" tag and this target's league-specific
+ * tag.
  */
 @Getter
 public enum SportsBettingExportTarget {

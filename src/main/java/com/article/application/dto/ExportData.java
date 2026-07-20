@@ -8,10 +8,10 @@ import com.article.domain.Video;
 import java.util.List;
 
 public record ExportData(
-        String category,                 // null for topic-mode batches
+        String category,
         List<Article> articles,
         List<Image> images,
         List<Video> videos,
-        List<ArticleLinks> articleLinks, // topic mode reads only .tags() from these
-        TopicExportContext topicContext  // null for category-mode batches
+        List<ArticleLinks> articleLinks,
+        TopicExportContext topicContext
 ) {}

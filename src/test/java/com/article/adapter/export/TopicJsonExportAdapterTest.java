@@ -2,8 +2,10 @@ package com.article.adapter.export;
 
 import com.article.application.dto.ExportData;
 import com.article.application.dto.TopicExportContext;
-import com.article.bootstrap.properties.CollectorProps;
+import com.article.bootstrap.properties.StorageProps;
 import com.article.domain.Article;
+import com.article.domain.ArticleLinkValue;
+import com.article.domain.ArticleLinks;
 import com.article.domain.TopicTarget;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -20,7 +22,6 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -41,8 +42,7 @@ class TopicJsonExportAdapterTest {
                 .registerModule(new JavaTimeModule())
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         articleExportMapper = new ArticleExportMapper();
-        CollectorProps props = new CollectorProps(null, null, 0, 0, 0, 0,
-                tempDir.toString(), null, null, null, 0, 0, null, null);
+        StorageProps props = new StorageProps(tempDir.toString(), null, null, null);
         adapter = new TopicJsonExportAdapter(objectMapper, props, articleExportMapper);
     }
 
@@ -125,8 +125,13 @@ class TopicJsonExportAdapterTest {
     }
 
     private ExportData exportDataFor(TopicTarget target, Article article) {
-        return new ExportData(null, List.of(article), List.of(), List.of(), List.of(),
-                new TopicExportContext(target, Map.of()));
+        ArticleLinks metadata = new ArticleLinks(
+                article.id(),
+                List.of(new ArticleLinkValue(target.topicNames().getLast(), target.topicUrl())),
+                List.of()
+        );
+        return new ExportData(null, List.of(article), List.of(), List.of(), List.of(metadata),
+                new TopicExportContext(target));
     }
 
     private Article article(String id, String publishDate) {

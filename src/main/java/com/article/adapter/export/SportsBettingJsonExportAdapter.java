@@ -1,10 +1,10 @@
 package com.article.adapter.export;
 
 import com.article.adapter.export.dto.ArticleExportDto;
-import com.article.adapter.export.dto.LinkDto;
 import com.article.application.dto.ExportData;
 import com.article.bootstrap.properties.StorageProps;
 import com.article.domain.Article;
+import com.article.domain.ArticleLinkValue;
 import com.article.domain.ArticleLinks;
 import com.article.domain.Image;
 import com.article.domain.Video;
@@ -32,20 +32,20 @@ import java.util.stream.Collectors;
 
 /**
  * Tags export mode: classifies articles into 4 fixed Sports Betting sections purely from tags
- * already extracted from raw_html (no DB schema changes, no stored classification). Unlike
+ * already stored in the article's JSONB metadata. Unlike
  * {@link TopicJsonExportAdapter} there is no "current target" and no file switching — the full
- * article table is scanned once in id order (see ArticleCollectorService.exportJsonByTags()) and
+ * article table is scanned once in id order (see ExportJsonUseCase) and
  * matches for all 4 targets are interleaved across that single scan in arbitrary order, so all 4
  * files are opened together up front and closed together at the end.
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "collector.export.mode", havingValue = "tags")
+@ConditionalOnProperty(name = "export.mode", havingValue = "tags")
 public class SportsBettingJsonExportAdapter implements ExportPort {
 
     // Already normalized (trimmed, lowercase) — compared against normalizeTagNames(...) below, not
-    // against raw LinkDto.name() values. TopicsTagsExtractor.extractTags() takes anchor.text() as-is
+    // against unnormalized ArticleLinkValue.name() values. The extractor takes anchor.text() as-is
     // (Jsoup normalizes internal whitespace but never touches case), and the real NYPost tag-list
     // markup renders its visible ALL-CAPS look purely via CSS text-transform — the actual DOM text
     // (and so anchor.text()) is lowercase, e.g. "sports betting", "nfl betting". Comparing that
@@ -61,7 +61,7 @@ public class SportsBettingJsonExportAdapter implements ExportPort {
     private final Map<SportsBettingExportTarget, JsonGenerator> generators = new EnumMap<>(SportsBettingExportTarget.class);
     private final Map<SportsBettingExportTarget, Integer> cumulativeTotals = new EnumMap<>(SportsBettingExportTarget.class);
 
-    // Mirrors the page number in ArticleCollectorService.exportJsonByTags() (export() is called
+    // Mirrors the page number in ExportJsonUseCase.exportJsonByTags() (export() is called
     // exactly once per page, in order, on a single thread) — kept locally instead of threading a
     // page number through ExportData, which is shared with category/topic modes.
     private int batchNumber = 0;
@@ -76,7 +76,7 @@ public class SportsBettingJsonExportAdapter implements ExportPort {
     public void export(ExportData data) {
         // Opened lazily on the first real export() call, not at bean construction — mirrors
         // JsonExportAdapter/TopicJsonExportAdapter, which also only touch the export directory in
-        // response to an actual export run. Configuring collector.export.mode=tags must not create
+        // response to an actual export run. Configuring export.mode=tags must not create
         // files by itself when collector.steps.export-json=false (or any other step runs instead).
         if (generators.isEmpty()) {
             for (SportsBettingExportTarget target : SportsBettingExportTarget.values()) {
@@ -104,12 +104,12 @@ public class SportsBettingJsonExportAdapter implements ExportPort {
 
         for (Article article : data.articles()) {
             ArticleLinks links = linksByArticleId.get(article.id());
-            List<LinkDto> tags = links != null ? links.tags() : List.of();
+            List<ArticleLinkValue> tags = links != null ? links.tags() : List.of();
             Set<String> tagNames = normalizeTagNames(tags);
 
             if (diagnosticsLogged < MAX_DIAGNOSTIC_LOGS && !tags.isEmpty()) {
                 log.info("[EXPORT][tags][diagnostic] articleId={} rawTagNames={} normalizedTagNames={}",
-                        article.id(), tags.stream().map(LinkDto::name).toList(), tagNames);
+                        article.id(), tags.stream().map(ArticleLinkValue::name).toList(), tagNames);
                 diagnosticsLogged++;
             }
 
@@ -118,7 +118,7 @@ public class SportsBettingJsonExportAdapter implements ExportPort {
             }
             sportsBettingCount++;
 
-            List<LinkDto> topics = links != null ? links.topics() : List.of();
+            List<ArticleLinkValue> topics = links != null ? links.topics() : List.of();
             ArticleExportDto dto = articleExportMapper.toDto(
                     article,
                     imagesByArticleId.getOrDefault(article.id(), List.of()),
@@ -159,11 +159,11 @@ public class SportsBettingJsonExportAdapter implements ExportPort {
         batchNumber++;
     }
 
-    // Normalizes case/whitespace before comparison rather than trusting TopicsTagsExtractor's raw
+    // Normalizes case/whitespace before comparison rather than trusting the stored extractor output
     // output to already be in a comparable form (it isn't — see the SPORTS_BETTING_TAG comment).
-    private Set<String> normalizeTagNames(List<LinkDto> tags) {
+    private Set<String> normalizeTagNames(List<ArticleLinkValue> tags) {
         return tags.stream()
-                .map(LinkDto::name)
+                .map(ArticleLinkValue::name)
                 .filter(Objects::nonNull)
                 .map(String::trim)
                 .filter(name -> !name.isEmpty())

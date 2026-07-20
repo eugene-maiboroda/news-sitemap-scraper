@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record StepsProps(
         Step discoverLinks,
         Step parsePages,
-        Step extractTopics,
+        Step extractMetadata,
         Step downloadImages,
         Step downloadVideos,
         Step exportJson,

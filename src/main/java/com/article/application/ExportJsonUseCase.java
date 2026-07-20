@@ -1,6 +1,5 @@
 package com.article.application;
 
-import com.article.adapter.article.TopicsTagsExtractor;
 import com.article.application.dto.ExportData;
 import com.article.application.dto.TopicExportContext;
 import com.article.bootstrap.properties.ExportPops;
@@ -22,22 +21,17 @@ public class ExportJsonUseCase {
     private final ExportPops exportPops;
     private final StepsProps stepsProps;
     private final ArticlePersistencePort articlePersistencePort;
-    private final ArticleHtmlPersistencePort articleHtmlPersistencePort;
     private final VideoPersistencePort videoPersistencePort;
     private final ImagePersistencePort imagePersistencePort;
     private final ArticleTopicsPersistencePort articleTopicsPersistencePort;
     private final ExportPort exportPort;
-    private final TopicsTagsExtractor topicsTagsExtractor;
 
     public void exportJson() {
 
-        String mode = exportPops.mode();
-        if ("topics".equals(mode)) {
-            exportJsonByTopics();
-        } else if ("tags".equals(mode)) {
-            exportJsonByTags();
-        } else {
-            exportJsonByCategory();
+        switch (exportPops.mode()) {
+            case TOPICS -> exportJsonByTopics();
+            case TAGS -> exportJsonByTags();
+            case CATEGORY -> exportJsonByCategory();
         }
     }
 
@@ -50,7 +44,7 @@ public class ExportJsonUseCase {
         log.info("Exporting {} categories", categories.size());
         for (String category : categories) {
             int page = 0;
-            List<Article> batch;
+            List<ArticleWithMetadata> batch;
             while (!(batch = articlePersistencePort.findArticlesByCategory(category, page, pageSize)).isEmpty()) {
                 exportBatch(category, batch);
                 page++;
@@ -58,7 +52,7 @@ public class ExportJsonUseCase {
         }
 
         int page = 0;
-        List<Article> batch;
+        List<ArticleWithMetadata> batch;
         while (!(batch = articlePersistencePort.findArticlesWithoutCategory(page, pageSize)).isEmpty()) {
             exportBatch(null, batch);
             page++;
@@ -67,15 +61,12 @@ public class ExportJsonUseCase {
         log.info("Export finished");
     }
 
-    private void exportBatch(String category, List<Article> articles) {
+    private void exportBatch(String category, List<ArticleWithMetadata> batch) {
+        List<Article> articles = batch.stream().map(ArticleWithMetadata::article).toList();
         List<String> articleIds = articles.stream().map(Article::id).toList();
         List<Image> images = imagePersistencePort.findImagesByArticleIds(articleIds);
         List<Video> videos = videoPersistencePort.findVideosByArticleIds(articleIds);
-
-        List<ArticleRawHtml> rawHtmls = articleHtmlPersistencePort.findRawHtmlByArticleIds(articleIds);
-        List<ArticleLinks> articleLinks = rawHtmls.stream()
-                .map(r -> topicsTagsExtractor.extract(r.articleId(), r.rawHtml()))
-                .toList();
+        List<ArticleLinks> articleLinks = batch.stream().map(ArticleWithMetadata::metadata).toList();
 
         exportPort.export(new ExportData(category, articles, images, videos, articleLinks, null));
     }
@@ -91,7 +82,7 @@ public class ExportJsonUseCase {
         int pageSize = stepsProps.exportJson().batchSize();
         int page = 0;
         long totalArticles = 0;
-        List<Article> batch;
+        List<ArticleWithMetadata> batch;
         while (true) {
             if (page == 0) {
                 log.info("[EXPORT][tags] requesting first page | pageSize={}", pageSize);
@@ -113,16 +104,13 @@ public class ExportJsonUseCase {
         log.info("Export (tags) finished");
     }
 
-    private void exportTagsBatch(int page, List<Article> articles, long dbMs) {
+    private void exportTagsBatch(int page, List<ArticleWithMetadata> batch, long dbMs) {
         long prepareStart = System.currentTimeMillis();
+        List<Article> articles = batch.stream().map(ArticleWithMetadata::article).toList();
         List<String> articleIds = articles.stream().map(Article::id).toList();
         List<Image> images = imagePersistencePort.findImagesByArticleIds(articleIds);
         List<Video> videos = videoPersistencePort.findVideosByArticleIds(articleIds);
-
-        List<ArticleRawHtml> rawHtmls = articleHtmlPersistencePort.findRawHtmlByArticleIds(articleIds);
-        List<ArticleLinks> articleLinks = rawHtmls.stream()
-                .map(r -> topicsTagsExtractor.extract(r.articleId(), r.rawHtml()))
-                .toList();
+        List<ArticleLinks> articleLinks = batch.stream().map(ArticleWithMetadata::metadata).toList();
         long prepareMs = System.currentTimeMillis() - prepareStart;
 
         long exportStart = System.currentTimeMillis();
@@ -150,17 +138,14 @@ public class ExportJsonUseCase {
     }
 
     private void exportTopicBatch(TopicTarget target, ArticleTopicsPage page) {
-        List<Article> articles = page.articles();
+        List<ArticleWithMetadata> batch = page.articles();
+        List<Article> articles = batch.stream().map(ArticleWithMetadata::article).toList();
         List<String> articleIds = articles.stream().map(Article::id).toList();
         List<Image> images = imagePersistencePort.findImagesByArticleIds(articleIds);
         List<Video> videos = videoPersistencePort.findVideosByArticleIds(articleIds);
-
-        List<ArticleRawHtml> rawHtmls = articleHtmlPersistencePort.findRawHtmlByArticleIds(articleIds);
-        List<ArticleLinks> articleLinks = rawHtmls.stream()
-                .map(r -> topicsTagsExtractor.extract(r.articleId(), r.rawHtml()))
-                .toList(); // adapter reads only .tags() from these
+        List<ArticleLinks> articleLinks = batch.stream().map(ArticleWithMetadata::metadata).toList();
 
         exportPort.export(new ExportData(null, articles, images, videos, articleLinks,
-                new TopicExportContext(target, page.articleTopics())));
+                new TopicExportContext(target)));
     }
 }

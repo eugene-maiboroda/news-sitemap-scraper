@@ -25,7 +25,7 @@ public class ArticleCollectorService implements ArticleCollectionUseCase {
         try {
             runIfEnabled(steps.discoverLinks(), discoveryLinkUseCase::discoverLinks);
             runIfEnabled(steps.parsePages(), parseArticleUseCase::parsePages);
-            runIfEnabled(steps.extractTopics(), extractTopicUseCase::extractTopics);
+            runIfEnabled(steps.extractMetadata(), extractTopicUseCase::extractTopics);
             runIfEnabled(steps.downloadImages(), imagesDownloaderUseCase::downloadImages);
             runIfEnabled(steps.downloadVideos(), videosDownloadUseCase::downloadVideo);
             runIfEnabled(steps.exportJson(), exportJsonUseCase::exportJson);

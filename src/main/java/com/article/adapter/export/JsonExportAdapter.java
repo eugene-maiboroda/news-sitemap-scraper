@@ -28,7 +28,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * export() is now called once per page of a category (see ArticleCollectorService.exportJson()),
+ * export() is called once per page of a category (see ExportJsonUseCase),
  * not once for the whole category — otherwise a large category has to be fully materialized in
  * memory before writing. To still produce exactly one valid JSON file per category, this adapter
  * keeps a single open {@link JsonGenerator} across calls and only closes it when the category
@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "collector.export.mode", havingValue = "category", matchIfMissing = true)
+@ConditionalOnProperty(name = "export.mode", havingValue = "category", matchIfMissing = true)
 public class JsonExportAdapter implements ExportPort {
 
     private final ObjectMapper objectMapper;

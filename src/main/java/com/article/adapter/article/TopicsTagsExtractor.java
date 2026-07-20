@@ -1,7 +1,8 @@
 package com.article.adapter.article;
 
-import com.article.adapter.export.dto.LinkDto;
+import com.article.domain.ArticleLinkValue;
 import com.article.domain.ArticleLinks;
+import com.article.port.MetadataExtractorPort;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -23,32 +24,37 @@ import java.util.List;
  * that token is required in addition to "flag" to exclude those decorations.
  */
 @Component
-public class TopicsTagsExtractor {
+public class TopicsTagsExtractor implements MetadataExtractorPort {
 
     private static final String TOPICS_SELECTOR = ".article-header__top .flag.flag--stamp";
     private static final String TAGS_SELECTOR = ".article-footer .tag-list a[rel=tag]";
 
+    @Override
     public ArticleLinks extract(String articleId, String rawHtml) {
         Document doc = Jsoup.parse(rawHtml == null ? "" : rawHtml);
         return new ArticleLinks(articleId, extractTopics(doc), extractTags(doc));
     }
 
-    private List<LinkDto> extractTopics(Document doc) {
-        List<LinkDto> topics = new ArrayList<>();
+    private List<ArticleLinkValue> extractTopics(Document doc) {
+        List<ArticleLinkValue> topics = new ArrayList<>();
         for (Element flag : doc.select(TOPICS_SELECTOR)) {
             String name = blankToNull(flag.text());
             String url = flagUrl(flag);
             if (name != null || url != null) {
-                topics.add(new LinkDto(name, url));
+                topics.add(new ArticleLinkValue(name, url));
             }
         }
         return topics;
     }
 
-    private List<LinkDto> extractTags(Document doc) {
-        List<LinkDto> tags = new ArrayList<>();
+    private List<ArticleLinkValue> extractTags(Document doc) {
+        List<ArticleLinkValue> tags = new ArrayList<>();
         for (Element anchor : doc.select(TAGS_SELECTOR)) {
-            tags.add(new LinkDto(anchor.text(), anchor.absUrl("href")));
+            String name = blankToNull(anchor.text());
+            String url = blankToNull(anchor.absUrl("href"));
+            if (name != null || url != null) {
+                tags.add(new ArticleLinkValue(name, url));
+            }
         }
         return tags;
     }

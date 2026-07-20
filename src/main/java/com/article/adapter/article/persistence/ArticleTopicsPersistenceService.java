@@ -2,13 +2,15 @@ package com.article.adapter.article.persistence;
 
 import com.article.adapter.article.mapper.ArticleMapper;
 import com.article.adapter.article.persistence.entity.ArticleEntity;
-import com.article.adapter.export.dto.LinkDto;
-import com.article.domain.Article;
 import com.article.domain.ArticleRawHtml;
 import com.article.domain.ArticleTopicsPage;
-import com.article.domain.ArticleTopicsResult;
+import com.article.domain.ArticleMetadataResult;
+import com.article.domain.ArticleWithMetadata;
 import com.article.domain.TopicTarget;
 import com.article.port.persistence.ArticleTopicsPersistencePort;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -16,30 +18,55 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ArticleTopicsPersistenceService implements ArticleTopicsPersistencePort {
 
     private static final String UPDATE_TOPICS_SQL = """
-            UPDATE articles SET
-                topic1_name = ?, topic1_url = ?,
-                topic2_name = ?, topic2_url = ?,
-                topic3_name = ?, topic3_url = ?,
-                topic4_name = ?, topic4_url = ?,
-                topic5_name = ?, topic5_url = ?,
-                main_category = ?, topics_extracted = TRUE
+            UPDATE articles
+            SET topics = ?::jsonb,
+                tags = ?::jsonb,
+                main_category = ?,
+                topics_extracted = TRUE
             WHERE id = ?
+            """;
+
+    private static final String FIND_TOPIC_TARGETS_SQL = """
+            SELECT DISTINCT
+                   topic.value ->> 'url' AS topic_url,
+                   topic.ordinality::integer AS level,
+                   a.main_category,
+                   (
+                       SELECT jsonb_agg(
+                                  COALESCE(prefix.value -> 'name', 'null'::jsonb)
+                                  ORDER BY prefix.ordinality
+                              )
+                       FROM jsonb_array_elements(a.topics)
+                            WITH ORDINALITY prefix(value, ordinality)
+                       WHERE prefix.ordinality <= topic.ordinality
+                   ) AS topic_names
+            FROM articles a
+            CROSS JOIN LATERAL jsonb_array_elements(a.topics)
+                 WITH ORDINALITY topic(value, ordinality)
+            WHERE a.topics_extracted = TRUE
+              AND topic.value ->> 'url' IS NOT NULL
+              AND (
+                    topic.value ->> 'name' IS NOT NULL
+                    OR (
+                        topic.ordinality = 1
+                        AND jsonb_array_length(a.topics) = 1
+                        AND a.main_category IS NOT NULL
+                    )
+                  )
+            ORDER BY topic_url, level, main_category, topic_names
             """;
 
     private final ArticleRepository articleRepository;
     private final ArticleMapper articleMapper;
     private final JdbcTemplate jdbcTemplate;
+    private final ObjectMapper objectMapper;
 
     @Override
     public List<ArticleRawHtml> findPendingBatch(int limit) {
@@ -50,86 +77,55 @@ public class ArticleTopicsPersistenceService implements ArticleTopicsPersistence
 
     @Override
     @Transactional
-    public void saveTopicsBatch(List<ArticleTopicsResult> results) {
+    public void saveArticleMetadata(List<ArticleMetadataResult> results) {
         jdbcTemplate.batchUpdate(UPDATE_TOPICS_SQL, results, results.size(), (ps, result) -> {
-            List<LinkDto> topics = result.topics();
-            for (int i = 0; i < 5; i++) {
-                LinkDto topic = i < topics.size() ? topics.get(i) : null;
-                ps.setString(i * 2 + 1, topic != null ? topic.name() : null);
-                ps.setString(i * 2 + 2, topic != null ? topic.url() : null);
-            }
-            ps.setString(11, result.mainCategory());
-            ps.setString(12, result.articleId());
+            ps.setString(1, serializeJson(result.topics()));
+            ps.setString(2, serializeJson(result.tags()));
+            ps.setString(3, result.mainCategory());
+            ps.setString(4, result.articleId());
         });
+    }
+
+    private String serializeJson(Object value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Failed to serialize article metadata as JSON", e);
+        }
     }
 
     @Override
     public List<TopicTarget> findDistinctTopicTargets() {
-        List<TopicTarget> targets = new ArrayList<>(articleRepository.findDistinctTopicTargetRows().stream()
-                .map(row -> new TopicTarget(row.getTopicUrl(), row.getLevel(), row.getMainCategory(),
-                        topicNamesUpToLevel(row)))
-                .toList());
-        // Edge case, additive only: standalone sections with a topic1_url but no topic1_name at
-        // all (e.g. "Post Sports+" rendered as a logo, no text) are invisible to the query above.
-        targets.addAll(articleRepository.findStandaloneTopicRows().stream()
-                .map(row -> new TopicTarget(row.getTopicUrl(), 1, row.getMainCategory(), Arrays.asList((String) null)))
-                .toList());
-        return targets;
-    }
-
-    // Arrays.asList (not List.of!) — topic names can contain null at an intermediate position
-    // (e.g. a Post Sports+ badge has no topic1 text), and List.of() rejects null elements.
-    private List<String> topicNamesUpToLevel(ArticleRepository.TopicTargetRow row) {
-        return switch (row.getLevel()) {
-            case 1 -> Arrays.asList(row.getTopic1Name());
-            case 2 -> Arrays.asList(row.getTopic1Name(), row.getTopic2Name());
-            case 3 -> Arrays.asList(row.getTopic1Name(), row.getTopic2Name(), row.getTopic3Name());
-            case 4 -> Arrays.asList(row.getTopic1Name(), row.getTopic2Name(), row.getTopic3Name(), row.getTopic4Name());
-            default -> Arrays.asList(row.getTopic1Name(), row.getTopic2Name(), row.getTopic3Name(),
-                    row.getTopic4Name(), row.getTopic5Name());
-        };
+        return jdbcTemplate.query(FIND_TOPIC_TARGETS_SQL, (rs, rowNum) -> new TopicTarget(
+                rs.getString("topic_url"),
+                rs.getInt("level"),
+                rs.getString("main_category"),
+                deserializeTopicNames(rs.getString("topic_names"))
+        ));
     }
 
     @Override
     public ArticleTopicsPage findArticlesByTopic(TopicTarget target, int page, int pageSize) {
         Pageable pageable = PageRequest.of(page, pageSize);
-        List<String> t = target.topicNames();
-        String url = target.topicUrl();
-        String mc = target.mainCategory();
-        // level=1 with a null topic1 name can only come from findStandaloneTopicRows() above (the
-        // main discovery query requires topic1Name to be non-null for level=1) — route it to the
-        // exact-match query, not the generic findByTopic1, which would also pull in articles that
-        // have a real deeper topic and already have their own separate target.
-        boolean isStandalone = target.level() == 1 && t.get(0) == null;
-        List<ArticleEntity> entities = isStandalone
-                ? articleRepository.findStandaloneByTopic1(url, mc, pageable)
-                : switch (target.level()) {
-                    case 1 -> articleRepository.findByTopic1(url, mc, t.get(0), pageable);
-                    case 2 -> articleRepository.findByTopic2(url, mc, t.get(0), t.get(1), pageable);
-                    case 3 -> articleRepository.findByTopic3(url, mc, t.get(0), t.get(1), t.get(2), pageable);
-                    case 4 -> articleRepository.findByTopic4(url, mc, t.get(0), t.get(1), t.get(2), t.get(3), pageable);
-                    default -> articleRepository.findByTopic5(url, mc, t.get(0), t.get(1), t.get(2), t.get(3), t.get(4), pageable);
-                };
-
-        List<Article> articles = articleMapper.toArticles(entities);
-        Map<String, List<LinkDto>> articleTopics = entities.stream()
-                .collect(Collectors.toMap(ArticleEntity::getId, this::buildTopicsList));
-        return new ArticleTopicsPage(articles, articleTopics);
+        boolean standalone = target.level() == 1 && target.topicNames().getFirst() == null;
+        List<ArticleEntity> entities = articleRepository.findByTopicTarget(
+                target.topicUrl(),
+                target.level() - 1,
+                target.level(),
+                target.mainCategory(),
+                serializeJson(target.topicNames()),
+                standalone,
+                pageable
+        );
+        List<ArticleWithMetadata> articles = articleMapper.toArticlesWithMetadata(entities);
+        return new ArticleTopicsPage(articles);
     }
 
-    private List<LinkDto> buildTopicsList(ArticleEntity e) {
-        List<LinkDto> topics = new ArrayList<>();
-        addTopicIfPresent(topics, e.getTopic1Name(), e.getTopic1Url());
-        addTopicIfPresent(topics, e.getTopic2Name(), e.getTopic2Url());
-        addTopicIfPresent(topics, e.getTopic3Name(), e.getTopic3Url());
-        addTopicIfPresent(topics, e.getTopic4Name(), e.getTopic4Url());
-        addTopicIfPresent(topics, e.getTopic5Name(), e.getTopic5Url());
-        return topics;
-    }
-
-    private void addTopicIfPresent(List<LinkDto> topics, String name, String url) {
-        if (name != null && !name.isBlank()) {
-            topics.add(new LinkDto(name, url));
+    private List<String> deserializeTopicNames(String json) {
+        try {
+            return objectMapper.readValue(json, new TypeReference<>() {});
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Failed to deserialize topic hierarchy from JSON", e);
         }
     }
 }

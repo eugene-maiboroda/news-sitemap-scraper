@@ -3,6 +3,7 @@ package com.article.adapter.article.persistence;
 import com.article.adapter.article.mapper.ArticleMapper;
 import com.article.domain.Article;
 import com.article.domain.ArticleLink;
+import com.article.domain.ArticleWithMetadata;
 import com.article.domain.Author;
 import com.article.domain.status.CrawlStatus;
 import com.article.port.persistence.ArticlePersistencePort;
@@ -70,20 +71,20 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
     }
 
     @Override
-    public List<Article> findArticlesByCategory(String category, int page, int pageSize) {
-        return articleMapper.toArticles(
+    public List<ArticleWithMetadata> findArticlesByCategory(String category, int page, int pageSize) {
+        return articleMapper.toArticlesWithMetadata(
                 articleRepository.findByCategoryOrderById(category, PageRequest.of(page, pageSize)));
     }
 
     @Override
-    public List<Article> findArticlesWithoutCategory(int page, int pageSize) {
-        return articleMapper.toArticles(
+    public List<ArticleWithMetadata> findArticlesWithoutCategory(int page, int pageSize) {
+        return articleMapper.toArticlesWithMetadata(
                 articleRepository.findArticlesWithoutCategory(PageRequest.of(page, pageSize)));
     }
 
     @Override
-    public List<Article> findAllArticlesOrdered(int page, int pageSize) {
-        return articleMapper.toArticles(
+    public List<ArticleWithMetadata> findAllArticlesOrdered(int page, int pageSize) {
+        return articleMapper.toArticlesWithMetadata(
                 articleRepository.findAllByOrderById(PageRequest.of(page, pageSize)));
     }
 
@@ -101,4 +102,3 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
                 .toList();
     }
 }
-

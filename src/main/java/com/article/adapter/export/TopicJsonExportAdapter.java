@@ -1,12 +1,12 @@
 package com.article.adapter.export;
 
 import com.article.adapter.export.dto.ArticleExportDto;
-import com.article.adapter.export.dto.LinkDto;
 import com.article.adapter.shared.ParseUtils;
 import com.article.application.dto.ExportData;
 import com.article.application.dto.TopicExportContext;
 import com.article.bootstrap.properties.StorageProps;
 import com.article.domain.Article;
+import com.article.domain.ArticleLinkValue;
 import com.article.domain.ArticleLinks;
 import com.article.domain.Image;
 import com.article.domain.TopicTarget;
@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "collector.export.mode", havingValue = "topics")
+@ConditionalOnProperty(name = "export.mode", havingValue = "topics")
 public class TopicJsonExportAdapter implements ExportPort {
 
     private final ObjectMapper objectMapper;
@@ -126,8 +126,8 @@ public class TopicJsonExportAdapter implements ExportPort {
                 .sorted(Comparator.comparing(Article::publishDate))
                 .map(article -> {
                     ArticleLinks links = linksByArticleId.get(article.id());
-                    List<LinkDto> topics = ctx.articleTopics().getOrDefault(article.id(), List.of());
-                    List<LinkDto> tags = links != null ? links.tags() : List.of();
+                    List<ArticleLinkValue> topics = links != null ? links.topics() : List.of();
+                    List<ArticleLinkValue> tags = links != null ? links.tags() : List.of();
                     return articleExportMapper.toDto(
                             article,
                             imagesByArticleId.getOrDefault(article.id(), List.of()),

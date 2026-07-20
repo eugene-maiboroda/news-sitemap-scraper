@@ -6,6 +6,7 @@ import com.article.adapter.export.dto.LinkDto;
 import com.article.adapter.export.dto.VideoExportDto;
 import com.article.adapter.shared.ParseUtils;
 import com.article.domain.Article;
+import com.article.domain.ArticleLinkValue;
 import com.article.domain.Image;
 import com.article.domain.Video;
 import org.springframework.stereotype.Component;
@@ -23,7 +24,7 @@ import java.util.List;
 public class ArticleExportMapper {
 
     public ArticleExportDto toDto(Article a, List<Image> images, List<Video> videos,
-                                   List<LinkDto> topics, List<LinkDto> tags) {
+                                   List<ArticleLinkValue> topics, List<ArticleLinkValue> tags) {
 
         List<ImageExportDto> imageDtos = images.stream()
                 .sorted(Comparator.comparing(Image::getPosition))
@@ -57,9 +58,15 @@ public class ArticleExportMapper {
                 .authorLink(a.authorLink())
                 .images(imageDtos)
                 .videos(videoDtos)
-                .topics(topics)
-                .tags(tags)
+                .topics(toLinkDtos(topics))
+                .tags(toLinkDtos(tags))
                 .content(a.content())
                 .build();
+    }
+
+    private List<LinkDto> toLinkDtos(List<ArticleLinkValue> links) {
+        return links.stream()
+                .map(link -> new LinkDto(link.name(), link.url()))
+                .toList();
     }
 }

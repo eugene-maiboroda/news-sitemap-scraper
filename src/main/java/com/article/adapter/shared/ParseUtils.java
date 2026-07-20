@@ -175,8 +175,8 @@ public class ParseUtils {
     /**
      * Builds a topic-file display hierarchy from a main category and an ordered list of topic
      * names, skipping null/blank entries and collapsing an entry that repeats the immediately
-     * preceding one (e.g. main_category == topic1_name) — not just the main_category/topic1 case
-     * specifically, any adjacent repeat.
+     * preceding one (e.g. main category equals the first topic name), and doing the same for any
+     * adjacent repeat deeper in the hierarchy.
      */
     public static List<String> buildHierarchy(String mainCategory, List<String> topicNames) {
         List<String> hierarchy = new ArrayList<>();
