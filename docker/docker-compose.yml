@@ -1,0 +1,41 @@
+services:
+  news-sitemap-scraper:
+    build:
+      context: ..
+      dockerfile: ./Dockerfile
+    container_name: news-sitemap-scraper
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+    networks:
+      - news-sitemap-scraper-net
+    depends_on:
+      - postgres-news-sitemap-scraper
+    volumes:
+      - ../results:/app/results
+
+  postgres-news-sitemap-scraper:
+    image: postgres:16-alpine
+    container_name: news-sitemap-scraper-postgres
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT}:5432"
+    networks:
+      - news-sitemap-scraper-net
+    volumes:
+      - news-sitemap-postgres-data:/var/lib/postgresql/data
+      - ../src/main/resources/createTable.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+
+volumes:
+  news-sitemap-postgres-data:
+
+networks:
+  news-sitemap-scraper-net:
