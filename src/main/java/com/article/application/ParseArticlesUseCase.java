@@ -22,7 +22,6 @@ public class ParseArticlesUseCase {
 
     public void parsePages(int batchSize) {
         log.info("Step: PARSE PAGES");
-
         log.info("Parsing pages | batchSize={}", batchSize);
 
         List<ArticleLink> batch;
@@ -37,11 +36,7 @@ public class ParseArticlesUseCase {
         long start = System.currentTimeMillis();
         switch (articleParserPort.parse(link)) {
             case ParseResult.Success success -> {
-                articlePersistencePort.saveArticleAndMarkParsed(
-                        success.article(),
-                        success.metadata(),
-                        link.articleUrl()
-                );
+                articlePersistencePort.saveArticleAndMarkParsed(success.article(), success.metadata(), link.articleUrl());
                 parsedMediaService.saveImages(success.images());
                 parsedMediaService.saveVideos(success.videos());
                 log.info("[PARSED] {} ({} ms)", link.articleUrl(), System.currentTimeMillis() - start);

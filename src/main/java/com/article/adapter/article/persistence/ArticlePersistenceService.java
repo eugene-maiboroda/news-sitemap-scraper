@@ -60,11 +60,7 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
 
     @Override
     @Transactional
-    public void saveArticleAndMarkParsed(
-            Article article,
-            ArticleMetadata metadata,
-        String articleUrl
-    ) {
+    public void saveArticleAndMarkParsed(Article article, ArticleMetadata metadata, String articleUrl) {
         articleRepository.save(articleMapper.toEntity(article, metadata));
         findLink(articleUrl).markParsed();
     }
