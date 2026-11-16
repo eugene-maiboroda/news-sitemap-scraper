@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "collector.export.mode", havingValue = "tags")
+@ConditionalOnProperty(name = "export.mode", havingValue = "tags")
 public class SportsBettingJsonExportAdapter implements ExportPort {
 
     // Already normalized (trimmed, lowercase) — compared against normalizeTagNames(...) below, not
@@ -76,8 +76,8 @@ public class SportsBettingJsonExportAdapter implements ExportPort {
     public void export(ExportData data) {
         // Opened lazily on the first real export() call, not at bean construction — mirrors
         // JsonExportAdapter/TopicJsonExportAdapter, which also only touch the export directory in
-        // response to an actual export run. Configuring collector.export.mode=tags must not create
-        // files by itself when collector.steps.export-json=false (or any other step runs instead).
+        // response to an actual export run. Configuring export.mode=tags must not create
+        // files by itself when steps.export-json.enabled=false (or any other step runs instead).
         if (generators.isEmpty()) {
             for (SportsBettingExportTarget target : SportsBettingExportTarget.values()) {
                 generators.put(target, openNew(target));

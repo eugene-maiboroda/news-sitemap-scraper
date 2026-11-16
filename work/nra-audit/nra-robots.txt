@@ -1,0 +1,24 @@
+User-Agent: *
+Allow: /
+Allow: /api/payload/media/file/
+Disallow: /account
+Disallow: /admin
+Disallow: /api
+Disallow: /auth
+Disallow: /campaigns
+Disallow: /dashboard
+Disallow: /email-templates
+Disallow: /forgot-password
+Disallow: /checkout
+Disallow: /confirm-email
+Disallow: /existing-account
+Disallow: /health
+Disallow: /join/return
+Disallow: /link
+Disallow: /login
+Disallow: /onboarding
+Disallow: /reset-password
+Disallow: /signup
+
+Host: https://www.nra.org
+Sitemap: https://www.nra.org/sitemap.xml

@@ -1,0 +1,57 @@
+{
+  "verified_on": "2026-10-23",
+  "scope": "Sample-based technical audit; not a full crawl",
+  "sitemaps": {
+    "rifleman": {
+      "records": 15711,
+      "unique_urls": 15706,
+      "content_records": 15678,
+      "unique_content_urls": 15673,
+      "missing_lastmod": 0
+    },
+    "hunter": {
+      "records": 10577,
+      "unique_urls": 10574,
+      "content_records": 10542,
+      "unique_content_urls": 10539,
+      "missing_lastmod": 0
+    },
+    "nra": {
+      "records": 6361,
+      "unique_urls": 6361,
+      "content_records": 2184,
+      "unique_content_urls": 2184,
+      "missing_lastmod": 4119
+    },
+    "ila-map-local": {
+      "records": 235,
+      "article_records": 0
+    },
+    "ila-map-shared": {
+      "records": 97,
+      "article_records": 96
+    }
+  },
+  "latest_reviews_lists_identical": true,
+  "pg51_repeats_pg50": true,
+  "pagination": {
+    "rifleman-guns-it100": {
+      "label": [
+        "Page 1 of 34 | "
+      ],
+      "items": 100
+    },
+    "rifleman-guns-it100-p34": {
+      "label": [
+        "Page 34 of 34 | "
+      ],
+      "items": 94
+    },
+    "hunter-rifles-it100": {
+      "label": [
+        "Page 1 of 18 | "
+      ],
+      "items": 100
+    }
+  }
+}

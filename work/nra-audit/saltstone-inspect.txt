@@ -1,0 +1,21 @@
+SELECTOR: .article-attribution COUNT: 1
+<div class="article-attribution">
+ <div>
+  by 
+  <ul class="comma-list">
+   <li class="article-author">Jeremiah Knupp</li>
+  </ul> posted on October 22, 2026
+ </div>
+ <div class="tag">
+  <a href="/news/">News</a>, <a href="/reviews/">Reviews</a>, <a href="/news/gear/">Gear</a>, <a href="/news/">New For 2026</a>
+ </div>
+</div>
+SELECTOR: .article-rte img COUNT: 8
+<img src="/media/yhqdqij5/saltstoneintegrator-02.jpg?mode=crop&amp;width=1920&amp;height=1080" alt="" width="1920" height="1080" data-udi="umb://media/2138e1c7fc3f4151998bafa3d98cf556" data-caption="The basic Integrator is a harness system for carrying a long gun. It can even be adapted for carrying two firearms at once. Image courtesy of Saltstone.">
+<img src="/media/oqga233q/saltstoneintegrator-03.jpg?mode=crop&amp;width=1920&amp;height=1080" alt="" width="1920" height="1080" data-udi="umb://media/770e0c725eb04d8baa640c614a8022b6" data-caption="The Integrator holds the firearm muzzle up and forward and is deployed with a quick-release catch. The firearm can go from secured into a shooting position in about a second.">
+<img src="/media/et2flcsm/saltstoneintegrator-04.jpg?mode=crop&amp;width=1920&amp;height=1080" alt="" width="1920" height="1080" data-udi="umb://media/8a55f822e44c4aeea50b9cfaac021868" data-caption="The Integrator is designed to carry scoped firearms in an optics-forward position.">
+<img src="/media/u30brg01/saltstoneintegrator-05.jpg?mode=crop&amp;width=1920&amp;height=1080" alt="" width="1920" height="1080" data-udi="umb://media/9b1875a1c75b4e0098fd45ea82529d8d" data-caption="Firearms can quickly transition from secure to on target instantly with the Integrator system.">
+<img src="/media/wdvj1ur0/saltstoneintegrator-06.jpg?mode=crop&amp;width=1920&amp;height=1080" alt="" width="1920" height="1080" data-udi="umb://media/d28debb6bd3a49f9a1db272e2fffcbd1" data-caption="The Integrator carries a long gun much more securely than a traditional sling, leaving the hands free for other field tasks.">
+<img src="/media/zcepsdei/saltstoneintegrator-07.jpg?mode=crop&amp;width=1920&amp;height=1080" alt="" width="1920" height="1080" data-udi="umb://media/0cf989ce95884de29ea571e5485b76d2" data-caption="The accessory 5-liter pack can be mounted to the rear or front (shown) of the Integrator system. When mounted on the front, it can serve as a binocular or handgun case.">
+<img src="/media/gzfnwmzd/saltstoneintegrator-08.jpg?mode=crop&amp;width=1920&amp;height=1080" alt="" width="1920" height="1080" data-udi="umb://media/33cb4b30b2234187a579c4c51870a51c" data-caption="Among the accessories that turn the Integrator into an upland rig are a no-spill shell pouch.">
+<img src="/media/kxrdd4he/saltstoneintegrator-09.jpg?mode=crop&amp;width=1920&amp;height=1080" alt="" width="1920" height="1080" data-udi="umb://media/f831e353fce44a53a54f5f260bd0ab6d" data-caption="The 12-liter game pouch adapts the Integrator for a day in the field.">

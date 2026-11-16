@@ -1,0 +1,20 @@
+SELECTOR: .paging-next COUNT: 1
+<a rel="nofollow" class="btn-more btn-more-dark btn-more-dark-small paging-next" href="/reviews/gear/?pg=2&amp;it=10&amp;st=True&amp;sd=Descending&amp;cnt=All&amp;cat=1218&amp;f=latest">Next <i class="fas fa-arrow-right" aria-hidden="true" title="Next"></i></a>
+SELECTOR: .article-attribution COUNT: 0
+SELECTOR: .paging-copy COUNT: 1
+<div class="paging-copy text-center">
+ <span class="d-none d-sm-inline">Page</span> <span class="paging-current-page">1</span> of <span class="paging-current-page">50</span>
+</div>
+SELECTOR: script[src] COUNT: 12
+<script src="/assets/js/vendor/jquery.min.js?v=25" type="eb0c4706691f5b0f7584c201-text/javascript"></script>
+<script src="/assets/js/vendor/lazysizes.min.js?v=25" type="eb0c4706691f5b0f7584c201-text/javascript"></script>
+<script defer src="/assets/js/vendor/popper.min.js?v=25" type="eb0c4706691f5b0f7584c201-text/javascript"></script>
+<script defer src="/assets/js/vendor/bootstrap.min.js?v=25" type="eb0c4706691f5b0f7584c201-text/javascript"></script>
+<script defer src="/assets/js/vendor/slide-menu.min.js?v=25" type="eb0c4706691f5b0f7584c201-text/javascript"></script>
+<script defer src="/assets/js/vendor/jquery.validate.min.js?v=25" type="eb0c4706691f5b0f7584c201-text/javascript"></script>
+<script defer src="/assets/js/vendor/jquery.validate.unobtrusive.min.js?v=25" type="eb0c4706691f5b0f7584c201-text/javascript"></script>
+<script defer src="/assets/js/vendor/jquery.unobtrusive-ajax.min.js?v=25" type="eb0c4706691f5b0f7584c201-text/javascript"></script>
+<script defer src="/assets/js/all.min.js?v=25" type="eb0c4706691f5b0f7584c201-text/javascript"></script>
+<script src="https://kit.fontawesome.com/bf59b22bba.js" crossorigin="anonymous" type="eb0c4706691f5b0f7584c201-text/javascript"></script>
+<script defer type="eb0c4706691f5b0f7584c201-text/javascript" src="https://d1wa642fa19wy3.cloudfront.net/scripts/MasterNav.js?v=1"></script>
+<script src="/cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js" data-cf-settings="eb0c4706691f5b0f7584c201-|49" defer></script>

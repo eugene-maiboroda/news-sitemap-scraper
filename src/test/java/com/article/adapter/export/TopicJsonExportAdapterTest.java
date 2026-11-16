@@ -2,7 +2,7 @@ package com.article.adapter.export;
 
 import com.article.application.dto.ExportData;
 import com.article.application.dto.TopicExportContext;
-import com.article.bootstrap.properties.CollectorProps;
+import com.article.bootstrap.properties.StorageProps;
 import com.article.domain.Article;
 import com.article.domain.TopicTarget;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -41,8 +41,7 @@ class TopicJsonExportAdapterTest {
                 .registerModule(new JavaTimeModule())
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         articleExportMapper = new ArticleExportMapper();
-        CollectorProps props = new CollectorProps(null, null, 0, 0, 0, 0,
-                tempDir.toString(), null, null, null, 0, 0, null, null);
+        StorageProps props = new StorageProps(tempDir.toString(), null, null, null);
         adapter = new TopicJsonExportAdapter(objectMapper, props, articleExportMapper);
     }
 

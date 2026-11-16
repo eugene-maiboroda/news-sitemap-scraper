@@ -1,0 +1,13 @@
+HTTP/2 200 
+content-type: video/mp4
+content-length: 41219504
+server: AmazonS3
+date: Fri, 23 Oct 2026 13:49:08 GMT
+last-modified: Thu, 03 Aug 2017 20:29:43 GMT
+etag: "3a2d88d76be41b0b3009a542ef16a9c4-8"
+accept-ranges: bytes
+x-cache: Miss from cloudfront
+via: 1.1 70aa402e5184132b0f555e60ac5344ce.cloudfront.net (CloudFront)
+x-amz-cf-pop: MAD53-P1
+x-amz-cf-id: HAfndWaeX0u-ioHyBW1v0UU-AoMdWl-IfiLqYGLcpzCJnq0wdNL1NQ==
+

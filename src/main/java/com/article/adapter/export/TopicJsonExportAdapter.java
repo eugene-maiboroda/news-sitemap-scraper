@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "collector.export.mode", havingValue = "topics")
+@ConditionalOnProperty(name = "export.mode", havingValue = "topics")
 public class TopicJsonExportAdapter implements ExportPort {
 
     private final ObjectMapper objectMapper;
