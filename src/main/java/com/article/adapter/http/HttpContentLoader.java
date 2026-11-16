@@ -31,25 +31,21 @@ public class HttpContentLoader {
     }
 
     private <T> T get(String url, Class<T> bodyType) {
-        var request = restClient.get();
+        RestClient.RequestHeadersSpec<?> request = restClient.get().uri(url);
         httpHeadersProvider.defaultHeaders().forEach(request::header);
 
-        ResponseEntity<String> response = restClient.get()
-                .uri(url)
+        ResponseEntity<T> response = execute(() -> request
                 .retrieve()
-                .toEntity(String.class);
-
+                .toEntity(bodyType), url);
         log.info("{} -> {}", url, response.getStatusCode());
-
-        return execute(() -> request.uri(url)
-                .retrieve()
-                .body(bodyType), url);
-
+        return response.getBody();
     }
 
     private <T> T execute(Supplier<T> supplier, String url) {
         try {
             return supplier.get();
+        } catch (HttpClientErrorException.TooManyRequests e) {
+            throw e;
         } catch (ResourceAccessException e) {
             throw new RuntimeException("Failed to connect: " + url, e);
 

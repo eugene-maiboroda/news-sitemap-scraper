@@ -3,6 +3,7 @@ package com.article;
 import com.article.domain.Article;
 import com.article.domain.ArticleLink;
 import com.article.domain.Author;
+import com.article.domain.DiscoveredArticle;
 import com.article.port.persistence.ArticlePersistencePort;
 
 import java.util.List;
@@ -17,6 +18,9 @@ public class FakeArticlePersistence implements ArticlePersistencePort {
 
     @Override
     public void insertLinks(List<ArticleLink> links) {}
+
+    @Override
+    public void saveDiscoveredArticles(List<DiscoveredArticle> articles) {}
 
     @Override
     public List<ArticleLink> findNewBatch(int limit) {

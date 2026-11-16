@@ -1,16 +1,16 @@
 version: "3.9"
 
 services:
-  si-postgres:
+  si-postgres-hunter:
     image: postgres:15
     environment:
-      POSTGRES_DB: nypost_articles
+      POSTGRES_DB: hunter_articles
       POSTGRES_USER: eyal
-      POSTGRES_PASSWORD: eyal_password
+      POSTGRES_PASSWORD: eyal_hunter
     ports:
-      - "5437:5432"
+      - "5441:5432"
     volumes:
-      - si_article_pgdata:/var/lib/postgresql/data
+       - si_article_hunter_pgdata:/var/lib/postgresql/data
 
 volumes:
-  si_article_pgdata:
+  si_article_hunter_pgdata:

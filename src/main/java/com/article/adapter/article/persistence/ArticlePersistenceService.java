@@ -4,9 +4,12 @@ import com.article.adapter.article.mapper.ArticleMapper;
 import com.article.domain.Article;
 import com.article.domain.ArticleLink;
 import com.article.domain.Author;
+import com.article.domain.DiscoveredArticle;
 import com.article.domain.status.CrawlStatus;
 import com.article.port.persistence.ArticlePersistencePort;
 import com.article.port.IdGenerationPort;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -14,6 +17,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -27,11 +31,39 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
             ON CONFLICT (article_url) DO NOTHING
             """;
 
+    private static final String UPSERT_DISCOVERED_ARTICLE_SQL = """
+            INSERT INTO article_links (
+                id, article_url, status, discovery_title, discovery_description, menu_paths
+            )
+            VALUES (?, ?, 'NEW', ?, ?, CAST(? AS jsonb))
+            ON CONFLICT (article_url) DO UPDATE SET
+                discovery_title = COALESCE(NULLIF(article_links.discovery_title, ''), EXCLUDED.discovery_title),
+                discovery_description = COALESCE(
+                    NULLIF(article_links.discovery_description, ''), EXCLUDED.discovery_description
+                ),
+                menu_paths = (
+                    SELECT COALESCE(jsonb_object_agg(paths.section_url, paths.hierarchies), '{}'::jsonb)
+                    FROM (
+                        SELECT section_url, jsonb_agg(DISTINCT hierarchy ORDER BY hierarchy) AS hierarchies
+                        FROM (
+                            SELECT key AS section_url, value AS section_paths
+                            FROM jsonb_each(COALESCE(article_links.menu_paths, '{}'::jsonb))
+                            UNION ALL
+                            SELECT key, value FROM jsonb_each(EXCLUDED.menu_paths)
+                        ) AS sections
+                        CROSS JOIN LATERAL jsonb_array_elements(section_paths) AS entries(hierarchy)
+                        GROUP BY section_url
+                    ) AS paths
+                )
+            """;
+
     private final ArticleLinkRepository linkRepository;
     private final ArticleRepository articleRepository;
     private final ArticleMapper articleMapper;
     private final JdbcTemplate jdbcTemplate;
     private final IdGenerationPort idGenerationPort;
+
+    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional
@@ -43,6 +75,27 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
             ps.setObject(3, link.articleDate());
         });
         log.info("Insert took {} ms", System.currentTimeMillis() - start);
+    }
+
+    @Override
+    @Transactional
+    public void saveDiscoveredArticles(List<DiscoveredArticle> articles) {
+        List<DiscoveredArticle> ordered = articles.stream()
+                .sorted(Comparator.comparing(DiscoveredArticle::articleUrl))
+                .toList();
+        for (DiscoveredArticle article : ordered) {
+            jdbcTemplate.update(UPSERT_DISCOVERED_ARTICLE_SQL,
+                    idGenerationPort.generateId(), article.articleUrl(),
+                    article.title(), article.description(), serializeMenuPaths(article));
+        }
+    }
+
+    private String serializeMenuPaths(DiscoveredArticle article) {
+        try {
+            return objectMapper.writeValueAsString(article.menuPaths());
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Invalid menu paths for " + article.articleUrl(), e);
+        }
     }
 
     @Override
