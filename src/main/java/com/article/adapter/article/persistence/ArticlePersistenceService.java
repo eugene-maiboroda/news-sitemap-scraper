@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,8 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class ArticlePersistenceService implements ArticlePersistencePort {
+
+    private static final int DISCOVERY_BATCH_SIZE = 500;
 
     private static final String BULK_INSERT_SQL = """
             INSERT INTO article_links (id, article_url, article_date, status)
@@ -58,7 +61,7 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
             """;
 
     private final ArticleLinkRepository linkRepository;
-    private final ArticleRepository articleRepository;
+    private final ObjectProvider<ArticleRepository> articleRepositoryProvider;
     private final ArticleMapper articleMapper;
     private final JdbcTemplate jdbcTemplate;
     private final IdGenerationPort idGenerationPort;
@@ -83,11 +86,13 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
         List<DiscoveredArticle> ordered = articles.stream()
                 .sorted(Comparator.comparing(DiscoveredArticle::articleUrl))
                 .toList();
-        for (DiscoveredArticle article : ordered) {
-            jdbcTemplate.update(UPSERT_DISCOVERED_ARTICLE_SQL,
-                    idGenerationPort.generateId(), article.articleUrl(),
-                    article.title(), article.description(), serializeMenuPaths(article));
-        }
+        jdbcTemplate.batchUpdate(UPSERT_DISCOVERED_ARTICLE_SQL, ordered, DISCOVERY_BATCH_SIZE, (statement, article) -> {
+            statement.setString(1, idGenerationPort.generateId());
+            statement.setString(2, article.articleUrl());
+            statement.setString(3, article.title());
+            statement.setString(4, article.description());
+            statement.setString(5, serializeMenuPaths(article));
+        });
     }
 
     private String serializeMenuPaths(DiscoveredArticle article) {
@@ -107,7 +112,7 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
     @Override
     @Transactional
     public void saveArticleAndMarkParsed(Article article, String articleUrl) {
-        articleRepository.save(articleMapper.toEntity(article));
+        articleRepositoryProvider.getObject().save(articleMapper.toEntity(article));
         linkRepository.updateStatus(articleUrl, CrawlStatus.PARSED);
     }
 
@@ -119,30 +124,30 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
 
     @Override
     public List<String> findDistinctCategories() {
-        return articleRepository.findDistinctCategories();
+        return articleRepositoryProvider.getObject().findDistinctCategories();
     }
 
     @Override
     public List<Article> findArticlesByCategory(String category, int page, int pageSize) {
         return articleMapper.toArticles(
-                articleRepository.findByCategoryOrderById(category, PageRequest.of(page, pageSize)));
+                articleRepositoryProvider.getObject().findByCategoryOrderById(category, PageRequest.of(page, pageSize)));
     }
 
     @Override
     public List<Article> findArticlesWithoutCategory(int page, int pageSize) {
         return articleMapper.toArticles(
-                articleRepository.findArticlesWithoutCategory(PageRequest.of(page, pageSize)));
+                articleRepositoryProvider.getObject().findArticlesWithoutCategory(PageRequest.of(page, pageSize)));
     }
 
     @Override
     public List<Article> findAllArticlesOrdered(int page, int pageSize) {
         return articleMapper.toArticles(
-                articleRepository.findAllByOrderById(PageRequest.of(page, pageSize)));
+                articleRepositoryProvider.getObject().findAllByOrderById(PageRequest.of(page, pageSize)));
     }
 
     @Override
     public List<Author> findDistinctAuthors() {
-        return articleRepository.findDistinctAuthors().stream()
+        return articleRepositoryProvider.getObject().findDistinctAuthors().stream()
                 .map(row -> new Author(
                         idGenerationPort.generateId(),
                         row.getAuthorName(),

@@ -1,9 +1,12 @@
 package com.article.application;
 
+import com.article.adapter.article.HunterStateDirectory;
+import com.article.bootstrap.properties.CollectorProps;
 import com.article.bootstrap.properties.StepsProps;
-import com.article.port.*;
+import com.article.port.ArticleCollectionUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -18,26 +21,26 @@ public class ArticleCollectorService implements ArticleCollectionUseCase {
     private final VideosDownloadUseCase videosDownloadUseCase;
     private final ExportJsonUseCase exportJsonUseCase;
     private final StepsProps steps;
+    private final CollectorProps collector;
+    private final ObjectProvider<HunterStateDirectory> hunterStateDirectoryProvider;
 
     @Override
     public void run() {
-
         try {
             runIfEnabled(steps.discoverLinks(), discoveryLinkUseCase::discoverLinks);
             runIfEnabled(steps.parsePages(), parseArticleUseCase::parsePages);
+
+            if (collector.discoverySource() == CollectorProps.DiscoverySource.AMERICAN_HUNTER) {
+                runIfEnabled(steps.parsePages(), () -> hunterStateDirectoryProvider.getObject().export());
+                log.info("American Hunter Article Collector finished");
+                return;
+            }
             runIfEnabled(steps.extractTopics(), extractTopicUseCase::extractTopics);
             runIfEnabled(steps.downloadImages(), imagesDownloaderUseCase::downloadImages);
             runIfEnabled(steps.downloadVideos(), videosDownloadUseCase::downloadVideo);
             runIfEnabled(steps.exportJson(), exportJsonUseCase::exportJson);
-//        log.info("Author parsed and updated");
-//        authorUseCase.parseAuthors();
-//        log.info("Authors parsed and updated");
 
-//        authorUseCase.downloadAvatars();
-//        log.info("Author avatars downloaded");
 
-//        authorUseCase.exportAuthors();
-//        log.info("Authors exported");
 
             log.info("NYPost Article Collector finished");
         } catch (Exception e) {

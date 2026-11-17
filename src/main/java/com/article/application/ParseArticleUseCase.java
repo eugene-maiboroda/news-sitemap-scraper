@@ -1,12 +1,15 @@
 package com.article.application;
 
 import com.article.bootstrap.properties.StepsProps;
+import com.article.adapter.article.persistence.HunterArticleStore;
 import com.article.domain.ArticleLink;
 import com.article.domain.ParseResult;
 import com.article.port.ArticlePagePort;
 import com.article.port.persistence.ArticlePersistencePort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,6 +24,7 @@ public class ParseArticleUseCase {
     private final ArticlePagePort articlePagePort;
     private final ParallelExecutor parallelExecutor;
     private final ParsedMediaService parsedMediaService;
+    private final ObjectProvider<HunterArticleStore> hunterArticleStoreProvider;
 
     public void parsePages() {
         log.info("Step: PARSE PAGES");
@@ -30,10 +34,6 @@ public class ParseArticleUseCase {
 
         List<ArticleLink> batch;
 
-//        batch.add(ArticleLink.builder()
-//                .articleDate(LocalDate.EPOCH)
-//                .articleUrl("https://nypost.com/2024/02/11/lifestyle/dear-abby-im-gay-but-women-keep-coming-on-to-me/")
-//                .build());
         while (!(batch = articlePersistencePort.findNewBatch(batchSize)).isEmpty()) {
             parallelExecutor.execute(batch, this::parseSingle);
         }
@@ -49,21 +49,19 @@ public class ParseArticleUseCase {
                 parsedMediaService.saveVideos(success.videos());
                 log.info("[PARSED] {} ({} ms)", link.articleUrl(), System.currentTimeMillis() - start);
             }
-            case ParseResult.Failure f -> {
-                articlePersistencePort.markError(link.articleUrl(), f.error().reason());
-                log.warn("[ERROR] {} | {} ({} ms)", link.articleUrl(), f.error().reason(), System.currentTimeMillis() - start);            }
+            case ParseResult.HunterSuccess success -> {
+                try {
+                    hunterArticleStoreProvider.getObject().save(success);
+                    log.info("[PARSED] {} ({} ms)", link.articleUrl(), System.currentTimeMillis() - start);
+                } catch (DataAccessException e) {
+                    articlePersistencePort.markError(link.articleUrl(), "Failed to persist Hunter article");
+                    log.warn("[ERROR] Failed to persist Hunter article {}", link.articleUrl(), e);
+                }
+            }
+            case ParseResult.Failure failure -> {
+                articlePersistencePort.markError(link.articleUrl(), failure.error().reason());
+                log.warn("[ERROR] {} | {} ({} ms)", link.articleUrl(), failure.error().reason(), System.currentTimeMillis() - start);
+            }
         }
     }
 }
-
-
-
-//    } catch (
-//HttpStatusCodeException e) {
-//        log.error("[PARSE] HTTP {} for {}", e.getStatusCode().value(), url);
-//        return ParseResult.error(url, "HTTP " + e.getStatusCode().value());
-//        } catch (Exception e) {
-//        log.error("[PARSE] Failed to fetch {}: {}", url, e.getMessage());
-//        return ParseResult.error(url, e.getMessage());
-//        }
-//        }

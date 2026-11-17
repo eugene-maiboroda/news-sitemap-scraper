@@ -15,6 +15,7 @@ import com.article.domain.Video;
 import com.article.port.ArticlePagePort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -37,6 +38,7 @@ import static com.article.adapter.shared.ParseUtils.*;
 
 @Slf4j
 @Component
+@ConditionalOnProperty(name = "collector.discovery-source", havingValue = "SITEMAP", matchIfMissing = true)
 @RequiredArgsConstructor
 public class ArticleParser implements ArticlePagePort {
 
@@ -58,49 +60,49 @@ public class ArticleParser implements ArticlePagePort {
     @Override
     public ParseResult parse(ArticleLink link) {
         String url = link.articleUrl();
-            String html = contentLoader.loadText(url);
-            Document doc = Jsoup.parse(html, url);
-            Element articleEl = doc.select(ARTICLE_SELECTOR).first();
-            clearMarketing(articleEl);
-            String articleId = idFromUrl(url);
+        String html = contentLoader.loadText(url);
+        Document doc = Jsoup.parse(html, url);
+        Element articleEl = doc.select(ARTICLE_SELECTOR).first();
+        clearMarketing(articleEl);
+        String articleId = idFromUrl(url);
 
-            String title = getText(doc.select(TITLE_SELECTOR));
-            String content = doc.select(CONTENT_SELECTOR).html();
+        String title = getText(doc.select(TITLE_SELECTOR));
+        String content = doc.select(CONTENT_SELECTOR).html();
 
-            if (title.isBlank()) {
-                log.warn("[PARSE] Missing title: {}", url);
-                return ParseResult.error(url, "Missing title");
-            }
-
-            if (content.isBlank()) {
-                log.warn("[PARSE] Missing content: {}", url);
-                return ParseResult.error(url, "Missing content");
-            }
-
-            Article article = Article.builder()
-                    .id(articleId)
-                    .category(getText(doc.select(CATEGORY_SELECTOR)))
-                    .url(url)
-                    .publishDate(link.articleDate())
-                    .title(title)
-                    .subTitle(EMPTY)
-                    .author(getText(doc.select(AUTHOR_SELECTOR).eq(0)))
-                    .authorLink(getFirstLink(doc.select(AUTHOR_SELECTOR).eq(0)))
-                    .content(content)
-                    .build();
-
-            List<Image> images = extractImages(doc, articleId);
-
-            List<Video> videos = new ArrayList<>();
-            jwVideoExtractor.extract(doc, articleId, url).ifPresent(videos::add);
-            youtubeVideoExtractor.extract(doc, articleId, url).ifPresent(videos::add);
-            if (stepsProps.extractConnatixVideos().enabled()) {
-                connatixVideoExtractor.ifAvailable(extractor
-                        -> extractor.extract(articleId, url).ifPresent(videos::add));
-            }
-
-            return ParseResult.ok(article, images, videos);
+        if (title.isBlank()) {
+            log.warn("[PARSE] Missing title: {}", url);
+            return ParseResult.error(url, "Missing title");
         }
+
+        if (content.isBlank()) {
+            log.warn("[PARSE] Missing content: {}", url);
+            return ParseResult.error(url, "Missing content");
+        }
+
+        Article article = Article.builder()
+                .id(articleId)
+                .category(getText(doc.select(CATEGORY_SELECTOR)))
+                .url(url)
+                .publishDate(link.articleDate())
+                .title(title)
+                .subTitle(EMPTY)
+                .author(getText(doc.select(AUTHOR_SELECTOR).eq(0)))
+                .authorLink(getFirstLink(doc.select(AUTHOR_SELECTOR).eq(0)))
+                .content(content)
+                .build();
+
+        List<Image> images = extractImages(doc, articleId);
+
+        List<Video> videos = new ArrayList<>();
+        jwVideoExtractor.extract(doc, articleId, url).ifPresent(videos::add);
+        youtubeVideoExtractor.extract(doc, articleId, url).ifPresent(videos::add);
+        if (stepsProps.extractConnatixVideos().enabled()) {
+            connatixVideoExtractor.ifAvailable(extractor
+                    -> extractor.extract(articleId, url).ifPresent(videos::add));
+        }
+
+        return ParseResult.ok(article, images, videos);
+    }
 
     private List<Image> extractImages(Document doc, String articleId) {
         List<Element> imgElements = contentImages(doc, IMAGES_SELECTOR);

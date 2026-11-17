@@ -1,0 +1,905 @@
+{
+  "url" : "https://www.americanhunter.org/state-fish-game-information/",
+  "title" : "State Fish & Game Information",
+  "states" : [ {
+    "name" : "Alabama",
+    "links" : [ {
+      "name" : "Department of Conservation & Natural Resources",
+      "url" : "https://www.outdooralabama.com/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://www.outdooralabama.com/licenses/hunting-licenses"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://www.outdooralabama.com/hunting/hunter-education-alabama"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://www.outdooralabama.com/hunting/seasons-and-bag-limits"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://www.outdooralabama.com/hunting/hunter-resources"
+    } ]
+  }, {
+    "name" : "Alaska",
+    "links" : [ {
+      "name" : "Department of Fish & Game",
+      "url" : "http://www.adfg.alaska.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "http://www.adfg.alaska.gov/index.cfm?adfg=huntlicense.main"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "http://www.adfg.alaska.gov/index.cfm?adfg=huntered.main"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "http://www.adfg.alaska.gov/index.cfm?adfg=hunting.regulations"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "http://www.adfg.alaska.gov/index.cfm?adfg=hunting.general"
+    } ]
+  }, {
+    "name" : "Arizona",
+    "links" : [ {
+      "name" : "Game & Fish Department",
+      "url" : "https://www.azgfd.com/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://www.azgfd.com/license/"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://www.azgfd.com/Education/Hunting/"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://www.azgfd.com/Hunting/Regulations/"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://www.azgfd.com/Hunting/"
+    } ]
+  }, {
+    "name" : "Arkansas",
+    "links" : [ {
+      "name" : "Game & Fish Commission",
+      "url" : "https://www.agfc.com/en/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://www.agfc.com/en/resources/licensing/huntinglicenses/"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://www.agfc.com/en/education/first-steps-outdoors/huntered/"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://www.agfc.com/en/hunting/general-hunting-regulations/"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://www.agfc.com/en/resources/"
+    } ]
+  }, {
+    "name" : "California",
+    "links" : [ {
+      "name" : "Department of Fish & Wildlife",
+      "url" : "https://wildlife.ca.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://wildlife.ca.gov/Licensing/Hunting"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://wildlife.ca.gov/Hunter-Education"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://wildlife.ca.gov/Regulations"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://wildlife.ca.gov/Hunting"
+    } ]
+  }, {
+    "name" : "Colorado",
+    "links" : [ {
+      "name" : "Parks & Wildlife",
+      "url" : "https://cpw.state.co.us/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://cpw.state.co.us/buyapply/pages/hunting.aspx"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://cpw.state.co.us/learn/Pages/HunterEducation.aspx"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://cpw.state.co.us/aboutus/Pages/RegulationsBrochures.aspx"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://cpw.state.co.us/thingstodo/Pages/hunt.aspx"
+    } ]
+  }, {
+    "name" : "Connecticut",
+    "links" : [ {
+      "name" : "Department of Energy and Environmental Protection",
+      "url" : "https://portal.ct.gov/deep"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://portal.ct.gov/DEEP/Hunting/Hunting-Licenses-and-Permits"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://portal.ct.gov/DEEP/Hunting/CEFS/CEFS-Program"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://portal.ct.gov/DEEP/Hunting/Hunting-and-Trapping-Information"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://dnrec.alpha.delaware.gov/fish-wildlife/hunting/"
+    } ]
+  }, {
+    "name" : "Delaware",
+    "links" : [ {
+      "name" : "Division of Fish & Wildlife",
+      "url" : "https://dnrec.alpha.delaware.gov/fish-wildlife/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "http://www.eregulations.com/delaware/hunting/license-permit-tag-fees/"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://dnrec.alpha.delaware.gov/fish-wildlife/hunter-education/"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "http://www.eregulations.com/delaware/hunting/"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "http://www.eregulations.com/delaware/hunting/"
+    } ]
+  }, {
+    "name" : "Florida",
+    "links" : [ {
+      "name" : "Fish & Wildlife Conservation Commission",
+      "url" : "https://myfwc.com/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://myfwc.com/license/recreational/hunting/"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://myfwc.com/hunting/safety-education/courses/"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://myfwc.com/hunting/season-dates/"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://myfwc.com/hunting/"
+    } ]
+  }, {
+    "name" : "Georgia",
+    "links" : [ {
+      "name" : "Department of Natural Resources",
+      "url" : "https://georgiawildlife.com/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://georgiawildlife.com/licenses-permits-passes"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://georgiawildlife.com/hunting/huntereducation"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://georgiawildlife.com/sites/default/files/wrd/pdf/regulations/Season%20Dates.pdf"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://georgiawildlife.com/hunting/hunter-resources"
+    } ]
+  }, {
+    "name" : "Hawaii",
+    "links" : [ {
+      "name" : "Division of Forestry & Wildlife",
+      "url" : "http://dlnr.hawaii.gov/dofaw/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://hunting.ehawaii.gov/hunting/license.html"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://dlnr.hawaii.gov/huntered/"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://dlnr.hawaii.gov/recreation/hunting/mammal/"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://dlnr.hawaii.gov/recreation/hunting/"
+    } ]
+  }, {
+    "name" : "Idaho",
+    "links" : [ {
+      "name" : "Department of Fish & Game",
+      "url" : "https://idfg.idaho.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://idfg.idaho.gov/licenses"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://idfg.idaho.gov/hunt/education"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://idfg.idaho.gov/rules"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://idfg.idaho.gov/hunt"
+    } ]
+  }, {
+    "name" : "Illinois",
+    "links" : [ {
+      "name" : "Department of Natural Resources",
+      "url" : "https://www2.illinois.gov/dnr/Pages/default.aspx"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://www2.illinois.gov/dnr/LPR/Pages/LicenseAndPermitFees.aspx"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://www2.illinois.gov/dnr/safety/Pages/HunterSafety.aspx"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://www2.illinois.gov/dnr/hunting/Documents/HuntTrapDigest.pdf"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://www2.illinois.gov/dnr/hunting/Pages/GettingStarted.aspx"
+    } ]
+  }, {
+    "name" : "Indiana",
+    "links" : [ {
+      "name" : "Department of Natural Resources",
+      "url" : "https://www.in.gov/dnr/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://www.in.gov/dnr/fishwild/5330.htm"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://www.in.gov/dnr/lawenfor/4812.htm"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://www.in.gov/dnr/fishwild/2343.htm"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://www.in.gov/dnr/fishwild/2344.htm"
+    } ]
+  }, {
+    "name" : "Iowa",
+    "links" : [ {
+      "name" : "Department of Natural Resources",
+      "url" : "https://www.iowadnr.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://www.iowadnr.gov/Hunting/Hunting-Licenses-Laws"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://www.iowadnr.gov/Hunting/Hunter-Education"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://www.iowadnr.gov/Hunting/Hunting-Season-Dates"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://www.iowadnr.gov/Hunting"
+    } ]
+  }, {
+    "name" : "Kansas",
+    "links" : [ {
+      "name" : "Department of Wildlife, Parks & Tourism",
+      "url" : "https://ksoutdoors.com/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://ksoutdoors.com/Hunting/Applications-and-Fees"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://ksoutdoors.com/Services/Education/Hunter"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://ksoutdoors.com/Hunting/When-to-Hunt"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://ksoutdoors.com/Hunting"
+    } ]
+  }, {
+    "name" : "Kentucky",
+    "links" : [ {
+      "name" : "Department of Fish & Wildlife Resources",
+      "url" : "https://fw.ky.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://app.fw.ky.gov/solar/"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://fw.ky.gov/Education/Pages/Hunter-Education.aspx"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://app.fw.ky.gov/SeasonDates/Default.aspx"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://fw.ky.gov/Hunt/"
+    } ]
+  }, {
+    "name" : "Louisiana",
+    "links" : [ {
+      "name" : "Department of Wildlife & Fisheries",
+      "url" : "https://www.wlf.louisiana.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://www.wlf.louisiana.gov/page/hunting-licenses-and-permits"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://www.wlf.louisiana.gov/page/hunter-and-trapper-education"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://www.wlf.louisiana.gov/page/seasons-and-regulations"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://www.wlf.louisiana.gov/"
+    } ]
+  }, {
+    "name" : "Maine",
+    "links" : [ {
+      "name" : "Department of Inland Fisheries & Wildlife",
+      "url" : "https://www.maine.gov/ifw/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://www.maine.gov/ifw/hunting-trapping/licenses-permits/index.html"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://www.maine.gov/ifw/programs-resources/safety-courses/index.html"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://www.maine.gov/ifw/hunting-trapping/hunting-laws/season-dates-bag-limits.html"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://www.maine.gov/ifw/hunting-trapping/hunting-resources/index.html"
+    } ]
+  }, {
+    "name" : "Maryland",
+    "links" : [ {
+      "name" : "Department of Natural Resources",
+      "url" : "https://dnr.maryland.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://dnr.maryland.gov/Pages/service_hunting_license.aspx"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://dnr.maryland.gov/nrp/Pages/hunter_education.aspx"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "http://www.eregulations.com/maryland/hunting/hunting-regulations/"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://dnr.maryland.gov/huntersguide/"
+    } ]
+  }, {
+    "name" : "Massachusetts",
+    "links" : [ {
+      "name" : "Department of Fish & Game",
+      "url" : "https://www.mass.gov/orgs/department-of-fish-and-game"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://www.mass.gov/massfishhunt-buy-fishing-or-hunting-licenses"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://www.mass.gov/massachusetts-hunter-education-program"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://www.mass.gov/hunting-regulations"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://www.mass.gov/topics/hunting"
+    } ]
+  }, {
+    "name" : "Michigan",
+    "links" : [ {
+      "name" : "Department of Natural Resources",
+      "url" : "https://www.michigan.gov/dnr/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://www.mdnr-elicense.com/"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://www.michigan.gov/dnr/0,4570,7-350-79119_79147_81282---,00.html"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://www.michigan.gov/dnr/0,4570,7-350-79119_79147_82106---,00.html"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://www.michigan.gov/dnr/0,4570,7-350-79119_79147---,00.html"
+    } ]
+  }, {
+    "name" : "Minnesota",
+    "links" : [ {
+      "name" : "Department of Natural Resources",
+      "url" : "https://www.dnr.state.mn.us/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://www.dnr.state.mn.us/licenses/online-sales.html"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://www.dnr.state.mn.us/safety/index.html"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://www.dnr.state.mn.us/regulations/hunting/index.html"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://www.dnr.state.mn.us/hunting/index.html"
+    } ]
+  }, {
+    "name" : "Mississippi",
+    "links" : [ {
+      "name" : "Department of Wildlife, Fisheries & Parks",
+      "url" : "http://www.mdwfp.com/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "http://www.mdwfp.com/license.aspx"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "http://www.mdwfp.com/education-outreach/hunter-education.aspx"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "http://www.mdwfp.com/media/253620/20-2020-2021-hunting-season-flyer-web.pdf"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "http://www.mdwfp.com/wildlife-hunting/"
+    } ]
+  }, {
+    "name" : "Missouri",
+    "links" : [ {
+      "name" : "Department of Conservation",
+      "url" : "https://mdc.mo.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://huntfish.mdc.mo.gov/hunting-trapping/permits"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://huntfish.mdc.mo.gov/hunting-trapping/hunter-education-skills-training"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://huntfish.mdc.mo.gov/hunting-trapping/regulations"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://huntfish.mdc.mo.gov/"
+    } ]
+  }, {
+    "name" : "Montana",
+    "links" : [ {
+      "name" : "Department of Fish, Wildlife & Parks",
+      "url" : "http://fwp.mt.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "http://fwp.mt.gov/hunting/licenses/"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "http://fwp.mt.gov/education/hunter/"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "http://fwp.mt.gov/hunting/regulations/"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "http://fwp.mt.gov/hunting/"
+    } ]
+  }, {
+    "name" : "Nebraska",
+    "links" : [ {
+      "name" : "Game and Parks Commission",
+      "url" : "http://outdoornebraska.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://ngpc-home.ne.gov/"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "http://outdoornebraska.gov/huntereducation/"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "http://outdoornebraska.gov/huntingseasons/"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "http://outdoornebraska.gov/hunting/"
+    } ]
+  }, {
+    "name" : "Nevada",
+    "links" : [ {
+      "name" : "Department of Wildlife",
+      "url" : "http://www.ndow.org/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "http://www.ndow.org/hunt/regulations_licenses_tags_permits/"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "http://www.ndow.org/Education/Hunter_Ed/"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "http://www.ndow.org/Hunt/Seasons_and_Regulations/"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "http://www.ndow.org/Hunt/"
+    } ]
+  }, {
+    "name" : "New Hampshire",
+    "links" : [ {
+      "name" : "Fish & Game Department",
+      "url" : "https://www.wildlife.state.nh.us/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://www.wildlife.state.nh.us/licensing/3ways.html"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://www.wildlife.state.nh.us/hunting/hunter-ed.html"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://www.wildlife.state.nh.us/hunting/hunt-dates.html"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://www.wildlife.state.nh.us/hunting/index.html"
+    } ]
+  }, {
+    "name" : "New Jersey",
+    "links" : [ {
+      "name" : "Division of Fish & Wildlife",
+      "url" : "https://www.state.nj.us/dep/fgw/index.htm"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://www.state.nj.us/dep/fgw/licenses.htm"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://www.state.nj.us/dep/fgw/hunted.htm"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://www.state.nj.us/dep/fgw/njregs.htm#hunting"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://www.state.nj.us/dep/fgw/hunting.htm"
+    } ]
+  }, {
+    "name" : "New Mexico",
+    "links" : [ {
+      "name" : "Department of Game & Fish",
+      "url" : "http://www.wildlife.state.nm.us/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "http://www.wildlife.state.nm.us/hunting/licenses-and-permits/"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "http://www.wildlife.state.nm.us/education/hunter-education/"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "http://www.wildlife.state.nm.us/home/publications/"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "http://www.wildlife.state.nm.us/hunting/"
+    } ]
+  }, {
+    "name" : "New York",
+    "links" : [ {
+      "name" : "Department of Environmental Conservation",
+      "url" : "http://www.dec.ny.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "http://www.dec.ny.gov/permits/6094.html"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "http://www.dec.ny.gov/outdoor/7860.html"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "http://www.dec.ny.gov/outdoor/65231.html"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "http://www.dec.ny.gov/outdoor/hunting.html"
+    } ]
+  }, {
+    "name" : "North Carolina",
+    "links" : [ {
+      "name" : "Wildlife Resources Commission",
+      "url" : "https://www.ncwildlife.org/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://www.ncwildlife.org/Licensing/Hunting-Fishing-Trapping-Licenses"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://www.ncwildlife.org/Hunting/Before-The-Hunt/Hunter-Education-Courses"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://www.ncwildlife.org/Hunting/Seasons-Limits"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://www.ncwildlife.org/Hunting/Learn-Resources"
+    } ]
+  }, {
+    "name" : "North Dakota",
+    "links" : [ {
+      "name" : "Game & Fish Department",
+      "url" : "https://gf.nd.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://gf.nd.gov/hunting/license-general-info"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://gf.nd.gov/education/hunter"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://gf.nd.gov/hunting/season-dates"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://gf.nd.gov/hunting"
+    } ]
+  }, {
+    "name" : "Ohio",
+    "links" : [ {
+      "name" : "Department of Natural Resources",
+      "url" : "https://ohiodnr.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://oh-web.s3licensing.com/Home"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://ohiodnr.gov/wps/portal/gov/odnr-core/divisions/wildlife/related-resource/hunter-education"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://ohiodnr.gov/wps/portal/gov/odnr-core/divisions/wildlife/div-wildlife/div-wildlife"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://ohiodnr.gov/wps/portal/gov/odnr-core/divisions/wildlife"
+    } ]
+  }, {
+    "name" : "Oklahoma",
+    "links" : [ {
+      "name" : "Department of Wildlife Conservation",
+      "url" : "https://www.wildlifedepartment.com/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://www.wildlifedepartment.com/licensing"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://www.wildlifedepartment.com/education/hunter-ed/main"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://www.wildlifedepartment.com/hunting/seasons"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://www.wildlifedepartment.com/hunting"
+    } ]
+  }, {
+    "name" : "Oregon",
+    "links" : [ {
+      "name" : "Department of Fish & Wildlife",
+      "url" : "https://www.dfw.state.or.us/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://myodfw.com/big-game-hunting/licensing-info"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://myodfw.com/articles/hunter-education-course-or-field-day-registration"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "http://www.eregulations.com/oregon/big-game-hunting/"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://www.dfw.state.or.us/resources/hunting/index.asp"
+    } ]
+  }, {
+    "name" : "Pennsylvania",
+    "links" : [ {
+      "name" : "Game Commission",
+      "url" : "https://www.pgc.pa.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://www.pgc.pa.gov/HuntTrap/LicensesandPermits/Pages/default.aspx"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://www.pgc.pa.gov/HuntTrap/Hunter-TrapperEducation/Pages/default.aspx"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://www.pgc.pa.gov/HuntTrap/Law/Pages/SeasonsandBagLimits.aspx"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://www.pgc.pa.gov/HuntTrap/Hunting/Pages/default.aspx"
+    } ]
+  }, {
+    "name" : "Rhode Island",
+    "links" : [ {
+      "name" : "Department of Environmental Management",
+      "url" : "http://www.dem.ri.gov/programs/fish-wildlife/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "http://www.dem.ri.gov/programs/managementservices/licenses/hunting-licenses.php"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "http://www.dem.ri.gov/programs/fish-wildlife/wildlifehuntered/education/index.php"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "http://www.eregulations.com/rhodeisland/hunting/"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "http://www.dem.ri.gov/programs/fish-wildlife/wildlifehuntered/index.php"
+    } ]
+  }, {
+    "name" : "South Carolina",
+    "links" : [ {
+      "name" : "Department of Natural Resources",
+      "url" : "http://www.dnr.sc.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "http://www.dnr.sc.gov/licensing.html"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "http://www.dnr.sc.gov/education/hunted.html"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "http://www.eregulations.com/southcarolina/huntingandfishing/general-rules-regulations/"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "http://www.dnr.sc.gov/hunting.html"
+    } ]
+  }, {
+    "name" : "South Dakota",
+    "links" : [ {
+      "name" : "Game, Fish & Parks",
+      "url" : "https://gfp.sd.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://gfp.sd.gov/hunt-fish-license/"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://gfp.sd.gov/hunter-education/"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://gfp.sd.gov/pages/regulations/"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://gfp.sd.gov/hunt/"
+    } ]
+  }, {
+    "name" : "Tennessee",
+    "links" : [ {
+      "name" : "Wildlife Resources Agency",
+      "url" : "https://www.tn.gov/twra/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://www.tn.gov/twra/license-sales/hunting-licenses#requirements"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://www.tn.gov/twra/hunting/hunter-education.html"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "http://www.eregulations.com/tennessee/hunting/deer-seasons-bag-limits/"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://www.tn.gov/twra/hunting.html"
+    } ]
+  }, {
+    "name" : "Texas",
+    "links" : [ {
+      "name" : "Parks & Wildlife Department",
+      "url" : "https://tpwd.texas.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://tpwd.texas.gov/regulations/outdoor-annual/hunting/general-regulations/"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://tpwd.texas.gov/education/hunter-education"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://tpwd.texas.gov/regulations/outdoor-annual/hunting/"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://tpwd.texas.gov/huntwild/hunt/"
+    } ]
+  }, {
+    "name" : "Utah",
+    "links" : [ {
+      "name" : "Division of Wildlife Resources",
+      "url" : "https://wildlife.utah.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://wildlife.utah.gov/index.php/differences-between-licenses-and-permits.html"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://wildlife.utah.gov/hunting/hunter-education.html"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://wildlife.utah.gov/hunting/hunting-regulation.html"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://wildlife.utah.gov/hunting/main-hunting-page.html"
+    } ]
+  }, {
+    "name" : "Vermont",
+    "links" : [ {
+      "name" : "Fish & Wildlife Department",
+      "url" : "https://vtfishandwildlife.com/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://vtfishandwildlife.com/licenses-and-lotteries/license-center"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://vtfishandwildlife.com/hunt/hunter-education"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://vtfishandwildlife.com/hunt/hunting-and-trapping-seasons"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://vtfishandwildlife.com/hunt"
+    } ]
+  }, {
+    "name" : "Virginia",
+    "links" : [ {
+      "name" : "Department of Wildlife Resources",
+      "url" : "https://dwr.virginia.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://dwr.virginia.gov/hunting/regulations/licenses/"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://dwr.virginia.gov/hunting/education/"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://dwr.virginia.gov/hunting/regulations/"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://dwr.virginia.gov/hunting/"
+    } ]
+  }, {
+    "name" : "Washington",
+    "links" : [ {
+      "name" : "Department of Fish & Wildlife",
+      "url" : "https://wdfw.wa.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://wdfw.wa.gov/licenses/hunting"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://wdfw.wa.gov/hunting/requirements/education"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://wdfw.wa.gov/hunting/regulations"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://wdfw.wa.gov/hunting"
+    } ]
+  }, {
+    "name" : "West Virginia",
+    "links" : [ {
+      "name" : "Division of Natural Resources",
+      "url" : "http://www.wvdnr.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "http://www.wvdnr.gov/Hunting/licensing.shtm"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "http://www.wvdnr.gov/LEnforce/Education.shtm"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "http://www.wvdnr.gov/Hunting/hunting_regs.shtm"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "http://www.wvdnr.gov/Hunting/Hunting.shtm"
+    } ]
+  }, {
+    "name" : "Wisconsin",
+    "links" : [ {
+      "name" : "Department of Natural Resources",
+      "url" : "https://dnr.wi.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://dnr.wi.gov/GoWild/resident.html"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://dnr.wi.gov/education/outdoorskills/safetyeducation.html"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://dnr.wi.gov/topic/hunt/regulations.html"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://dnr.wi.gov/topic/hunt/"
+    } ]
+  }, {
+    "name" : "Wyoming",
+    "links" : [ {
+      "name" : "Game & Fish Department",
+      "url" : "https://wgfd.wyo.gov/"
+    }, {
+      "name" : "Hunting License Information",
+      "url" : "https://wgfd.wyo.gov/apply-or-buy"
+    }, {
+      "name" : "Hunter Education",
+      "url" : "https://wgfd.wyo.gov/Education/Hunter-Education"
+    }, {
+      "name" : "Seasons & Bag Limits",
+      "url" : "https://wgfd.wyo.gov/regulations"
+    }, {
+      "name" : "Hunter Resources",
+      "url" : "https://wgfd.wyo.gov/hunting"
+    } ]
+  } ]
+}

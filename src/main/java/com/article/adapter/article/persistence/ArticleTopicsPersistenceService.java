@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,13 +38,13 @@ public class ArticleTopicsPersistenceService implements ArticleTopicsPersistence
             WHERE id = ?
             """;
 
-    private final ArticleRepository articleRepository;
+    private final ObjectProvider<ArticleRepository> articleRepositoryProvider;
     private final ArticleMapper articleMapper;
     private final JdbcTemplate jdbcTemplate;
 
     @Override
     public List<ArticleRawHtml> findPendingBatch(int limit) {
-        return articleRepository.findPendingTopicsBatch(limit).stream()
+        return articleRepositoryProvider.getObject().findPendingTopicsBatch(limit).stream()
                 .map(v -> new ArticleRawHtml(v.getId(), v.getRawHtml()))
                 .toList();
     }
@@ -65,13 +66,13 @@ public class ArticleTopicsPersistenceService implements ArticleTopicsPersistence
 
     @Override
     public List<TopicTarget> findDistinctTopicTargets() {
-        List<TopicTarget> targets = new ArrayList<>(articleRepository.findDistinctTopicTargetRows().stream()
+        List<TopicTarget> targets = new ArrayList<>(articleRepositoryProvider.getObject().findDistinctTopicTargetRows().stream()
                 .map(row -> new TopicTarget(row.getTopicUrl(), row.getLevel(), row.getMainCategory(),
                         topicNamesUpToLevel(row)))
                 .toList());
         // Edge case, additive only: standalone sections with a topic1_url but no topic1_name at
         // all (e.g. "Post Sports+" rendered as a logo, no text) are invisible to the query above.
-        targets.addAll(articleRepository.findStandaloneTopicRows().stream()
+        targets.addAll(articleRepositoryProvider.getObject().findStandaloneTopicRows().stream()
                 .map(row -> new TopicTarget(row.getTopicUrl(), 1, row.getMainCategory(), Arrays.asList((String) null)))
                 .toList());
         return targets;
@@ -101,14 +102,15 @@ public class ArticleTopicsPersistenceService implements ArticleTopicsPersistence
         // exact-match query, not the generic findByTopic1, which would also pull in articles that
         // have a real deeper topic and already have their own separate target.
         boolean isStandalone = target.level() == 1 && t.get(0) == null;
+        ArticleRepository repository = articleRepositoryProvider.getObject();
         List<ArticleEntity> entities = isStandalone
-                ? articleRepository.findStandaloneByTopic1(url, mc, pageable)
+                ? repository.findStandaloneByTopic1(url, mc, pageable)
                 : switch (target.level()) {
-                    case 1 -> articleRepository.findByTopic1(url, mc, t.get(0), pageable);
-                    case 2 -> articleRepository.findByTopic2(url, mc, t.get(0), t.get(1), pageable);
-                    case 3 -> articleRepository.findByTopic3(url, mc, t.get(0), t.get(1), t.get(2), pageable);
-                    case 4 -> articleRepository.findByTopic4(url, mc, t.get(0), t.get(1), t.get(2), t.get(3), pageable);
-                    default -> articleRepository.findByTopic5(url, mc, t.get(0), t.get(1), t.get(2), t.get(3), t.get(4), pageable);
+                    case 1 -> repository.findByTopic1(url, mc, t.get(0), pageable);
+                    case 2 -> repository.findByTopic2(url, mc, t.get(0), t.get(1), pageable);
+                    case 3 -> repository.findByTopic3(url, mc, t.get(0), t.get(1), t.get(2), pageable);
+                    case 4 -> repository.findByTopic4(url, mc, t.get(0), t.get(1), t.get(2), t.get(3), pageable);
+                    default -> repository.findByTopic5(url, mc, t.get(0), t.get(1), t.get(2), t.get(3), t.get(4), pageable);
                 };
 
         List<Article> articles = articleMapper.toArticles(entities);
