@@ -1,9 +1,0 @@
-SELECTOR: .copy-features h3 a COUNT: 6
-<a href="/content/new-for-2021-chapuis-faisan-artisan/">New for 2021: Chapuis Faisan Artisan</a>
-<a href="/content/new-for-2021-taylor-s-company-ace/">New for 2021: Taylor's &amp; Company ACE</a>
-<a href="/content/self-defense-revolvers-are-they-a-good-choice/">Self-Defense Revolvers: Are They A Good Choice?</a>
-<a href="/content/review-cmmg-mk9-rdb-9-mm-pistol/">Review: CMMG Mk9 RDB 9 mm Pistol</a>
-<a href="/content/review-cz-bren-2-ms/">Review: CZ Bren 2 Ms</a>
-<a href="/content/new-for-2021-benelli-super-black-eagle-3-20-ga/">New for 2021: Benelli Super Black Eagle 3 20-Ga.</a>
-SELECTOR: .copy-features h2 a COUNT: 0
-SELECTOR: .feature-marquee h1 a COUNT: 0

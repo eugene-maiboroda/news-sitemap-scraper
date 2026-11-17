@@ -1,6 +1,5 @@
 package com.article.adapter.export;
 
-import com.article.adapter.export.dto.ArticleExportDto;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,10 +16,6 @@ import java.nio.file.StandardCopyOption;
 public class JsonExportAdapter {
 
     private final ObjectMapper objectMapper;
-
-    public void export(Path output, Iterable<ArticleExportDto> articles) throws IOException {
-        export(output, "articles", articles);
-    }
 
     public void export(Path output, String arrayName, Iterable<?> entries) throws IOException {
         Path target = output.toAbsolutePath();

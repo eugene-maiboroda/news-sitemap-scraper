@@ -4,7 +4,7 @@ Pipeline знаходить URL статей, парсить сторінки, �
 
 ## Перший локальний запуск
 
-1. Підніми PostgreSQL або запусти `docker compose -f docker/docker-compose.yml up -d`. Compose налаштований на БД `hunter_articles` і порт хоста `5441`. Для іншого PostgreSQL створи порожню БД під своїм користувачем.
+1. Перевір `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` і порт у [docker-compose.yml](docker/docker-compose.yml). Для Hunter це сервіс `si-postgres-hunter`, БД `hunter_articles` і порт хоста `5441`. Запусти `docker compose -f docker/docker-compose.yml up -d si-postgres-hunter`. Якщо використовуєш свій PostgreSQL, створи порожню БД з вибраною назвою під своїм користувачем.
 2. З кореня репозиторію застосуй [схему Hunter](database/hunter-schema.sql) один раз до порожньої БД. Для наявної БД із даними потрібна окрема міграція.
 
    ```sh
@@ -12,8 +12,8 @@ Pipeline знаходить URL статей, парсить сторінки, �
      -v ON_ERROR_STOP=1 -f database/hunter-schema.sql
    ```
 
-3. Передай `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` і `SPRING_DATASOURCE_PASSWORD` через локальне середовище або конфігурацію IDE. URL для Compose має вигляд `jdbc:postgresql://localhost:5441/hunter_articles`. Hibernate запускається з `ddl-auto=validate` і перевіряє вже створені таблиці.
-4. Вкажи свої директорії та явно вибери кроки запуску. Поточний [application.properties](src/main/resources/application.properties) містить локальні шляхи й перемикачі робочої сесії.
+3. Укажи в `application.properties` або в локальних параметрах запуску JDBC URL з тим самим портом хоста й назвою БД. Для Hunter це `spring.datasource.url=jdbc:postgresql://localhost:5441/hunter_articles`. `spring.datasource.username` і `spring.datasource.password` мають відповідати обліковим даним PostgreSQL. Hibernate перевіряє вже створені таблиці через `ddl-auto=validate`.
+4. Вкажи свої директорії та явно вибери кроки запуску. У [application.properties](src/main/resources/application.properties) усі кроки вимкнені за замовчуванням, а директорії задані відносно кореня проєкту.
 
    ```sh
    export STORAGE_EXPORT_DIR="$PWD/work/export"
@@ -31,6 +31,23 @@ Pipeline знаходить URL статей, парсить сторінки, �
    ```
 
    Приклад дістає JSON з уже наповненої БД. Для порожньої БД спочатку запусти Discovery і HTTP-парсинг за налаштуваннями нижче. З IDE запускай `com.article.Main`. Для перевірки компіляції з кешованими залежностями використовуй `mvn -o -q -DskipTests test-compile`.
+
+## Окрема БД для нового сайту
+
+Перед першим запуском нового сайту узгодь значення в Compose, команді `psql` і конфігурації застосунку. Приклад нижче використовує умовну назву `newsite`.
+
+| Що змінити | Hunter | Приклад для нового сайту |
+| --- | --- | --- |
+| Ключ сервісу під `services` | `si-postgres-hunter` | `si-postgres-newsite` |
+| `environment.POSTGRES_DB` сервісу | `hunter_articles` | `newsite_articles` |
+| Прив’язка порту хоста до PostgreSQL | `5441:5432` | `5442:5432` |
+| Ім’я тому в сервісі та в кореневому `volumes` | `si_article_hunter_pgdata` | `si_article_newsite_pgdata` |
+| `spring.datasource.url` | `jdbc:postgresql://localhost:5441/hunter_articles` | `jdbc:postgresql://localhost:5442/newsite_articles` |
+| Аргументи `psql` | `-p 5441 -d hunter_articles` | `-p 5442 -d newsite_articles` |
+
+У прив’язці порту змінюється ліва частина. Шлях тому всередині контейнера лишається `/var/lib/postgresql/data`. Якщо хочеш тримати обидві БД запущеними, додай новий сервіс і новий том поруч із Hunter та вкажи назву нового сервісу в команді `docker compose up -d`. PostgreSQL застосовує `POSTGRES_DB` під час першої ініціалізації порожнього тому. Зміна цього значення зі старим томом сама по собі нову БД не створює.
+
+Логін і пароль можна залишити такими самими або змінити. Якщо змінюєш, узгодь `POSTGRES_USER` і `POSTGRES_PASSWORD` із налаштуваннями підключення Spring, а в `psql -U` передай відповідний логін. Після запуску нового сервісу застосуй SQL-схему до нової БД до старту застосунку.
 
 ## Кроки і режими
 
@@ -70,7 +87,7 @@ Pipeline знаходить URL статей, парсить сторінки, �
 1. **Почни з меню.** Вручну склади таблицю «URL розділу → усі ієрархії від кореня». Познач розділи зі списком статей і довідкові сторінки. Додай зразки HTML карток і пагінації. Наприклад, один шлях до Archery може бути `["Archery"]`, інший — `["Guns & Gear", "Archery"]`, хоча URL розділу спільний.
 2. **Реалізуй Discovery.** Візьми за орієнтир [AmericanHunterDiscoveryAdapter](src/main/java/com/article/adapter/discovery/AmericanHunterDiscoveryAdapter.java) в `adapter/discovery`. Новий адаптер реалізує [MenuDiscoveryPort](src/main/java/com/article/port/MenuDiscoveryPort.java). `sections()` повертає `Section(path, hierarchies, collectCards)`, а `discover(Section)` — `SectionResult(cards, error)`. Збирай картки `Card(articleUrl, title, description)` з абсолютними нормалізованими URL, перевір пагінацію й повтори. `collectCards=false` виключає довідкову сторінку зі збору карток. Application сам додає `menu_paths` і передає результат у спільний upsert.
 3. **Зареєструй сайт.** Додай значення в `CollectorProps.Site` і підключи адаптер через `@ConditionalOnProperty(name = "collector.site", havingValue = "NEW_SITE")`, підставивши фактичне значення. Додай відповідну умову і до наявного `AmericanHunterDiscoveryAdapter`, який зараз реєструється безумовно, щоб Spring бачив один `MenuDiscoveryPort` для вибраного сайту. Перевір усі обов’язкові Spring-залежності для вибраного сайту. `DiscoveryLinkUseCase` отримує `MenuDiscoveryPort` навіть у режимі SITEMAP, а парсинг має залежності від `ArticlePagePort` і `ParsedArticleStorePort` навіть із вимкненим кроком. Для першого запуску нового сайту потрібні сумісні реалізації або окремо погоджена зміна підключення цих компонентів.
-4. **Перевір Discovery окремо.** Увімкни тільки `steps.discover-links.enabled`, перевір кілька розділів на окремій локальній БД. Один URL у кількох розділах має створити один рядок із повною картою `menu_paths`. Якщо потрібен SITEMAP, використай спільний `SitemapPort` і врахуй, що сам XML не дає шляхів меню.
+4. **Перевір Discovery окремо.** Підготуй БД за розділом «Окрема БД для нового сайту». Увімкни тільки `steps.discover-links.enabled`, перевір кілька розділів на окремій локальній БД. Один URL у кількох розділах має створити один рядок із повною картою `menu_paths`. Якщо потрібен SITEMAP, використай спільний `SitemapPort` і врахуй, що сам XML не дає шляхів меню.
 5. **Додай парсинг і збереження.** Передай приклади статей із різною розміткою. Реалізуй `ArticlePagePort` і підключи сумісний `ParsedArticleStorePort` для нового сайту. Визнач джерела заголовка, дати, автора, тіла, міток і медіа. Перевір повторний запис і помилки. Окремо визнач, чи потрібен цьому сайту режим повторного читання HTML.
 6. **Погодь клієнтський JSON.** Реалізуй спільний `ArticleJsonExportPort` у пакеті нового сайту. JDBC-читання й DTO розмісти поруч з адаптером, використай спільний `JsonExportAdapter`. Запусти тільки експорт і звір кількість записів, унікальні URL, шляхи й медіа з БД.
 

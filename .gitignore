@@ -145,3 +145,12 @@ jacoco.exec
 /docs/
 
 /AGENTS.md
+
+# Local research and generated pipeline output
+/work/local-audit/
+/work/nra-audit/
+/work/inspect_serp_poc.mjs
+/work/node_modules
+/work/export/
+/work/images/
+/work/videos/
