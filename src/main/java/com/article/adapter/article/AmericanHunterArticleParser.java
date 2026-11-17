@@ -133,6 +133,12 @@ public class AmericanHunterArticleParser implements ArticlePagePort {
                 .toList();
     }
 
+    @Override
+    public List<Image> parseArchivedImages(String articleId, String articleUrl, String rawHtml) {
+        Element scope = Jsoup.parse(rawHtml, articleUrl).selectFirst(".component.article-content");
+        return scope == null ? List.of() : images(scope, articleId);
+    }
+
     private static List<Image> images(Element scope, String articleId) {
         List<Image> images = new ArrayList<>();
         for (Element image : scope.select(".col-xl-9 > figure img, .article-rte img")) {
@@ -140,15 +146,53 @@ public class AmericanHunterArticleParser implements ArticlePagePort {
             if (url.isBlank()) {
                 continue;
             }
-            Element figure = image.closest("figure");
             images.add(Image.builder()
                     .articleId(articleId)
                     .imageUrl(url)
                     .position(images.size())
-                    .caption(figure == null ? null : text(figure.selectFirst("figcaption")))
+                    .caption(imageCaption(image))
                     .build());
         }
         return images;
+    }
+
+    private static String imageCaption(Element image) {
+        Element figure = image.closest("figure");
+        if (figure != null && figure.select("img").size() == 1) {
+            String caption = text(figure.selectFirst("figcaption"));
+            if (caption != null) {
+                return caption;
+            }
+        }
+
+        Element imageParagraph = image.closest("p");
+        if (imageParagraph == null || imageParagraph.select("img").size() != 1) {
+            return null;
+        }
+
+        Element inlineCaption = image.nextElementSibling();
+        if (image.parent() == imageParagraph && imageParagraph.childrenSize() == 2
+                && imageParagraph.ownText().isBlank() && inlineCaption != null
+                && inlineCaption.normalName().equals("strong")) {
+            return text(inlineCaption);
+        }
+        if (!imageParagraph.text().isBlank()) {
+            return null;
+        }
+
+        Element captionParagraph = imageParagraph.nextElementSibling();
+        if (captionParagraph == null || !captionParagraph.normalName().equals("p")
+                || captionParagraph.children().isEmpty() || !captionParagraph.ownText().isBlank()
+                || !captionParagraph.select("img, a, span").isEmpty()) {
+            return null;
+        }
+
+        for (Element child : captionParagraph.children()) {
+            if (!child.normalName().equals("strong")) {
+                return null;
+            }
+        }
+        return text(captionParagraph);
     }
 
     private static List<NamedLink> links(Element scope, String selector) {

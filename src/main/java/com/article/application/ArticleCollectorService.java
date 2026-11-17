@@ -2,6 +2,7 @@ package com.article.application;
 
 import com.article.bootstrap.properties.StepsProps;
 import com.article.port.ArticleCollectionUseCase;
+import com.article.port.ArticleJsonExportPort;
 import com.article.port.StateDirectoryExportPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,19 +21,21 @@ public class ArticleCollectorService implements ArticleCollectionUseCase {
     private final VideosDownloadUseCase videosDownloadUseCase;
     private final StepsProps steps;
     private final ObjectProvider<StateDirectoryExportPort> stateDirectoryExportProvider;
+    private final ObjectProvider<ArticleJsonExportPort> articleJsonExportProvider;
 
     @Override
     public void run() {
         try {
-            if (steps.exportJson().enabled()) {
-                throw new IllegalStateException("Article JSON export is not configured for NRA");
+            if (steps.parsePages().enabled() && steps.parsePages().source() == StepsProps.ParseSource.RAW_HTML) {
+                parseArticleUseCase.backfillCaptions();
+                return;
             }
 
             runIfEnabled(steps.discoverLinks(), discoveryLinkUseCase::discoverLinks);
-            runIfEnabled(steps.parsePages(), () -> {
+            if (steps.parsePages().enabled()) {
                 parseArticleUseCase.parsePages();
                 stateDirectoryExportProvider.ifAvailable(StateDirectoryExportPort::export);
-            });
+            }
 
             if (steps.extractAuthors() != null && steps.extractAuthors().enabled()) {
                 authorUseCase.extractAuthors();
@@ -40,10 +43,20 @@ public class ArticleCollectorService implements ArticleCollectionUseCase {
 
             runIfEnabled(steps.downloadImages(), imagesDownloaderUseCase::downloadImages);
             runIfEnabled(steps.downloadVideos(), videosDownloadUseCase::downloadVideo);
+            runIfEnabled(steps.exportJson(), this::exportArticles);
             log.info("Article collector finished");
         } catch (Exception e) {
             log.error("Article collector failed", e);
         }
+    }
+
+    private void exportArticles() {
+        ArticleJsonExportPort exporter = articleJsonExportProvider.getIfAvailable();
+        if (exporter == null) {
+            throw new IllegalStateException("Article JSON export is not configured for the selected site");
+        }
+        exporter.exportArticles();
+        log.info("Article JSON export finished");
     }
 
     private void runIfEnabled(StepsProps.Step step, Runnable action) {

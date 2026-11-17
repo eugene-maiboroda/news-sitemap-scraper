@@ -2,10 +2,12 @@ package com.article.application;
 
 import com.article.bootstrap.properties.StepsProps;
 import com.article.domain.ArticleLink;
+import com.article.domain.Image;
 import com.article.domain.ParseResult;
 import com.article.port.ArticlePagePort;
 import com.article.port.persistence.ArticlePersistencePort;
 import com.article.port.persistence.ParsedArticleStorePort;
+import com.article.port.persistence.ParsedArticleStorePort.ArchivedArticle;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -13,11 +15,14 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.atomic.LongAdder;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class ParseArticleUseCase {
+
+    private static final int MAX_ARCHIVE_BATCH_SIZE = 100;
 
     private final StepsProps stepsProps;
     private final ArticlePersistencePort articlePersistencePort;
@@ -37,6 +42,37 @@ public class ParseArticleUseCase {
             parallelExecutor.execute(batch, this::parseSingle);
         }
         log.info("No more links to parse");
+    }
+
+    public void backfillCaptions() {
+        ParsedArticleStorePort store = parsedArticleStoreProvider.getObject();
+        int limit = Math.clamp(stepsProps.parsePages().batchSize(), 1, MAX_ARCHIVE_BATCH_SIZE);
+        LongAdder updated = new LongAdder();
+        LongAdder failed = new LongAdder();
+        long scanned = 0;
+        String afterId = "";
+        List<ArchivedArticle> batch;
+
+        while (!(batch = store.findCaptionBackfillBatch(afterId, limit)).isEmpty()) {
+            parallelExecutor.execute(batch, article -> {
+                try {
+                    for (Image image : articlePagePort.parseArchivedImages(article.id(), article.url(), article.rawHtml())) {
+                        if (image.getCaption() != null && !image.getCaption().isBlank()) {
+                            updated.add(store.fillMissingCaption(image));
+                        }
+                    }
+                } catch (RuntimeException e) {
+                    failed.increment();
+                    log.error("[RAW_HTML] Failed to fill captions | articleId={}", article.id(), e);
+                }
+            });
+            scanned += batch.size();
+            afterId = batch.getLast().id();
+            log.info("[RAW_HTML] Caption backfill | articles={} captionsUpdated={} failed={}", scanned, updated.sum(), failed.sum());
+        }
+
+        log.info("[RAW_HTML] Caption backfill finished | articles={} captionsUpdated={} failed={}",
+                scanned, updated.sum(), failed.sum());
     }
 
     private void parseSingle(ArticleLink link) {

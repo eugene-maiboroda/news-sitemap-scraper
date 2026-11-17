@@ -22,7 +22,7 @@ public class JsonExportAdapter {
         export(output, "articles", articles);
     }
 
-    void export(Path output, String arrayName, Iterable<?> entries) throws IOException {
+    public void export(Path output, String arrayName, Iterable<?> entries) throws IOException {
         Path target = output.toAbsolutePath();
         Path directory = target.getParent();
         Files.createDirectories(directory);

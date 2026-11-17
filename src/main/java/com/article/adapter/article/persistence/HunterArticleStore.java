@@ -61,6 +61,35 @@ public class HunterArticleStore implements ParsedArticleStorePort {
         );
     }
 
+    @Override
+    public List<ArchivedArticle> findCaptionBackfillBatch(String afterId, int limit) {
+        return jdbcTemplate.query("""
+                SELECT a.id, a.article_url, a.raw_html
+                FROM articles a
+                WHERE a.id > ? AND a.raw_html IS NOT NULL AND a.article_url IS NOT NULL
+                  AND EXISTS (
+                      SELECT 1 FROM image i
+                      WHERE i.article_id = a.id AND (i.caption IS NULL OR i.caption ~ '^[[:space:]]*$')
+                  )
+                ORDER BY a.id
+                LIMIT ?
+                """, (row, index) -> new ArchivedArticle(row.getString("id"), row.getString("article_url"),
+                row.getString("raw_html")), afterId, limit);
+    }
+
+    @Override
+    public int fillMissingCaption(Image image) {
+        return jdbcTemplate.update("""
+                UPDATE image i SET caption = ?
+                WHERE i.article_id = ? AND i.image_url = ? AND i.position = ?
+                  AND (i.caption IS NULL OR i.caption ~ '^[[:space:]]*$')
+                  AND NOT EXISTS (
+                      SELECT 1 FROM image other
+                      WHERE other.article_id = i.article_id AND other.position = i.position AND other.id <> i.id
+                  )
+                """, image.getCaption(), image.getArticleId(), image.getImageUrl(), image.getPosition());
+    }
+
     private void upsertArticle(ParseResult.MenuArticleSuccess result) {
         Article article = result.article();
         String tagsJson = serialize(result.tags());
