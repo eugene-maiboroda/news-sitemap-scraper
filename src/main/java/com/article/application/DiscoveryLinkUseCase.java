@@ -1,13 +1,13 @@
 package com.article.application;
 
-import com.article.adapter.discovery.AmericanHunterDiscoveryAdapter;
-import com.article.adapter.discovery.AmericanHunterDiscoveryAdapter.Section;
-import com.article.adapter.discovery.AmericanHunterDiscoveryAdapter.SectionResult;
 import com.article.bootstrap.properties.CollectorProps;
 import com.article.domain.ArticleLink;
 import com.article.domain.DiscoveredArticle;
-import com.article.port.persistence.ArticlePersistencePort;
+import com.article.port.MenuDiscoveryPort.Section;
+import com.article.port.MenuDiscoveryPort.SectionResult;
+import com.article.port.MenuDiscoveryPort;
 import com.article.port.SitemapPort;
+import com.article.port.persistence.ArticlePersistencePort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,12 +22,12 @@ public class DiscoveryLinkUseCase {
     private final CollectorProps props;
     private final ArticlePersistencePort articlePersistencePort;
     private final SitemapPort sitemapPort;
-    private final AmericanHunterDiscoveryAdapter hunterDiscovery;
+    private final MenuDiscoveryPort menuDiscovery;
 
     public void discoverLinks() {
         log.info("Step: DISCOVER LINKS");
         if (props.discoverySource() == CollectorProps.DiscoverySource.AMERICAN_HUNTER) {
-            discoverHunterLinks();
+            discoverMenuLinks();
             return;
         }
         discoverSitemapLinks();
@@ -54,34 +54,39 @@ public class DiscoveryLinkUseCase {
         }
     }
 
-    private void discoverHunterLinks() {
+    private void discoverMenuLinks() {
         int failedSections = 0;
-        for (Section section : hunterDiscovery.sections()) {
+        for (Section section : menuDiscovery.sections()) {
             if (!section.collectCards()) {
-                log.info("Hunter reference page: {}", section.path());
+                log.info("Reference page: {}", section.path());
                 continue;
             }
 
             try {
-                SectionResult result = hunterDiscovery.discover(section);
-                Map<String, List<List<String>>> menuPaths = Map.of(section.path(), section.hierarchies());
-                List<DiscoveredArticle> articles = result.cards().stream()
-                        .map(card -> new DiscoveredArticle(card.articleUrl(), card.title(), card.description(), menuPaths))
-                        .toList();
-                if (!articles.isEmpty()) {
-                    articlePersistencePort.saveDiscoveredArticles(articles);
-                }
-                log.info("Hunter {}: {} unique URLs, {} article-menu paths saved",
-                        section.path(), articles.size(), (long) articles.size() * section.hierarchies().size());
+                SectionResult result = menuDiscovery.discover(section);
+                saveSectionCards(section, result);
                 if (result.error() != null) {
                     failedSections++;
-                    log.warn("Hunter section incomplete: {}", result.error());
+                    log.warn("Menu section incomplete: {}", result.error());
                 }
             } catch (RuntimeException e) {
                 failedSections++;
-                log.error("Failed to save Hunter section {}", section.path(), e);
+                log.error("Failed to save menu section {}", section.path(), e);
             }
         }
-        log.info("Hunter discovery finished with {} incomplete or failed sections", failedSections);
+        log.info("Menu discovery finished with {} incomplete or failed sections", failedSections);
+    }
+
+    private void saveSectionCards(Section section, SectionResult result) {
+        Map<String, List<List<String>>> menuPaths = Map.of(section.path(), section.hierarchies());
+        List<DiscoveredArticle> articles = result.cards().stream()
+                .map(card -> new DiscoveredArticle(card.articleUrl(), card.title(), card.description(), menuPaths))
+                .toList();
+
+        if (!articles.isEmpty()) {
+            articlePersistencePort.saveDiscoveredArticles(articles);
+        }
+        log.info("Section {}: {} unique URLs, {} article-menu paths saved",
+                section.path(), articles.size(), (long) articles.size() * section.hierarchies().size());
     }
 }

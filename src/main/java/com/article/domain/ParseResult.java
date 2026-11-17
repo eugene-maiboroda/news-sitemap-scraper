@@ -1,7 +1,5 @@
 package com.article.domain;
 
-import com.article.adapter.export.dto.LinkDto;
-
 import java.util.List;
 
 public sealed interface ParseResult {
@@ -16,7 +14,7 @@ public sealed interface ParseResult {
     ) implements ParseResult {
     }
 
-    record HunterSuccess(
+    record MenuArticleSuccess(
 
             Article article,
 
@@ -24,11 +22,11 @@ public sealed interface ParseResult {
 
             String affiliateDisclosure,
 
-            List<LinkDto> tags,
+            List<NamedLink> tags,
 
-            List<LinkDto> footerTags,
+            List<NamedLink> footerTags,
 
-            List<LinkDto> relatedStories,
+            List<NamedLink> relatedStories,
 
             List<Image> images,
 

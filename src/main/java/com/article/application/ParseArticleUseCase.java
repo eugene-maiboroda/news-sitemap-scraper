@@ -1,11 +1,11 @@
 package com.article.application;
 
 import com.article.bootstrap.properties.StepsProps;
-import com.article.adapter.article.persistence.HunterArticleStore;
 import com.article.domain.ArticleLink;
 import com.article.domain.ParseResult;
 import com.article.port.ArticlePagePort;
 import com.article.port.persistence.ArticlePersistencePort;
+import com.article.port.persistence.ParsedArticleStorePort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -24,7 +24,7 @@ public class ParseArticleUseCase {
     private final ArticlePagePort articlePagePort;
     private final ParallelExecutor parallelExecutor;
     private final ParsedMediaService parsedMediaService;
-    private final ObjectProvider<HunterArticleStore> hunterArticleStoreProvider;
+    private final ObjectProvider<ParsedArticleStorePort> parsedArticleStoreProvider;
 
     public void parsePages() {
         log.info("Step: PARSE PAGES");
@@ -49,19 +49,21 @@ public class ParseArticleUseCase {
                 parsedMediaService.saveVideos(success.videos());
                 log.info("[PARSED] {} ({} ms)", link.articleUrl(), System.currentTimeMillis() - start);
             }
-            case ParseResult.HunterSuccess success -> {
-                try {
-                    hunterArticleStoreProvider.getObject().save(success);
-                    log.info("[PARSED] {} ({} ms)", link.articleUrl(), System.currentTimeMillis() - start);
-                } catch (DataAccessException e) {
-                    articlePersistencePort.markError(link.articleUrl(), "Failed to persist Hunter article");
-                    log.warn("[ERROR] Failed to persist Hunter article {}", link.articleUrl(), e);
-                }
-            }
+            case ParseResult.MenuArticleSuccess success -> saveMenuArticle(link.articleUrl(), success, start);
             case ParseResult.Failure failure -> {
                 articlePersistencePort.markError(link.articleUrl(), failure.error().reason());
                 log.warn("[ERROR] {} | {} ({} ms)", link.articleUrl(), failure.error().reason(), System.currentTimeMillis() - start);
             }
+        }
+    }
+
+    private void saveMenuArticle(String url, ParseResult.MenuArticleSuccess success, long start) {
+        try {
+            parsedArticleStoreProvider.getObject().save(success);
+            log.info("[PARSED] {} ({} ms)", url, System.currentTimeMillis() - start);
+        } catch (DataAccessException e) {
+            articlePersistencePort.markError(url, "Failed to persist Hunter article");
+            log.warn("[ERROR] Failed to persist menu article {}", url, e);
         }
     }
 }

@@ -1,9 +1,9 @@
 package com.article.application;
 
-import com.article.adapter.article.HunterStateDirectory;
 import com.article.bootstrap.properties.CollectorProps;
 import com.article.bootstrap.properties.StepsProps;
 import com.article.port.ArticleCollectionUseCase;
+import com.article.port.StateDirectoryExportPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -22,7 +22,7 @@ public class ArticleCollectorService implements ArticleCollectionUseCase {
     private final ExportJsonUseCase exportJsonUseCase;
     private final StepsProps steps;
     private final CollectorProps collector;
-    private final ObjectProvider<HunterStateDirectory> hunterStateDirectoryProvider;
+    private final ObjectProvider<StateDirectoryExportPort> stateDirectoryExportProvider;
 
     @Override
     public void run() {
@@ -31,7 +31,7 @@ public class ArticleCollectorService implements ArticleCollectionUseCase {
             runIfEnabled(steps.parsePages(), parseArticleUseCase::parsePages);
 
             if (collector.discoverySource() == CollectorProps.DiscoverySource.AMERICAN_HUNTER) {
-                runIfEnabled(steps.parsePages(), () -> hunterStateDirectoryProvider.getObject().export());
+                runIfEnabled(steps.parsePages(), () -> stateDirectoryExportProvider.getObject().export());
                 log.info("American Hunter Article Collector finished");
                 return;
             }

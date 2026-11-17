@@ -1,6 +1,7 @@
 package com.article.adapter.discovery;
 
 import com.article.adapter.http.HttpContentLoader;
+import com.article.port.MenuDiscoveryPort;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
@@ -17,7 +18,7 @@ import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
-public class AmericanHunterDiscoveryAdapter {
+public class AmericanHunterDiscoveryAdapter implements MenuDiscoveryPort {
 
     private static final String BASE_URL = "https://www.americanhunter.org";
     private static final String PAGE_SIZE = "20000";
@@ -53,54 +54,60 @@ public class AmericanHunterDiscoveryAdapter {
 
     private final HttpContentLoader httpContentLoader;
 
+    @Override
     public List<Section> sections() {
         return SECTIONS;
     }
 
+    @Override
     public SectionResult discover(Section section) {
-        Map<String, Card> cards = new LinkedHashMap<>();
         if (!section.collectCards()) {
             return new SectionResult(List.of(), null);
         }
 
+        Map<String, Card> collectedCards = new LinkedHashMap<>();
         Set<URI> visitedPages = new HashSet<>();
-        Set<Set<String>> visitedCardSets = new HashSet<>();
+        Set<Set<String>> visitedPageArticleUrls = new HashSet<>();
         URI page = URI.create(BASE_URL + section.path());
         try {
             Element listing = loadListing(page);
-            URI next = nextPage(listing);
-            if (next != null) {
-                validatePage(next, section);
-                page = UriComponentsBuilder.fromUri(next)
-                        .replaceQueryParam("pg", "1")
-                        .replaceQueryParam("it", PAGE_SIZE)
-                        .build(true)
-                        .toUri();
+            URI firstNextPage = nextPage(listing);
+            if (firstNextPage != null) {
+                page = firstBatchPage(firstNextPage, section);
                 listing = loadListing(page);
             }
 
+            visitedPages.add(page);
             while (true) {
-                visitedPages.add(page);
                 Map<String, Card> pageCards = readCards(listing);
-                if (!visitedCardSets.add(Set.copyOf(pageCards.keySet()))) {
+                if (!visitedPageArticleUrls.add(Set.copyOf(pageCards.keySet()))) {
                     throw new IllegalStateException("Repeated set of listing cards");
                 }
-                pageCards.forEach(cards::putIfAbsent);
+                pageCards.forEach(collectedCards::putIfAbsent);
 
                 page = nextPage(listing);
                 if (page == null) {
                     break;
                 }
                 validatePage(page, section);
-                if (visitedPages.contains(page)) {
+                if (!visitedPages.add(page)) {
                     throw new IllegalStateException("Repeated listing URL");
                 }
                 listing = loadListing(page);
             }
-            return new SectionResult(List.copyOf(cards.values()), null);
+            return new SectionResult(List.copyOf(collectedCards.values()), null);
         } catch (RuntimeException e) {
-            return new SectionResult(List.copyOf(cards.values()), section.path() + " [" + page + "]: " + e.getMessage());
+            return new SectionResult(List.copyOf(collectedCards.values()), section.path() + " [" + page + "]: " + e.getMessage());
         }
+    }
+
+    private static URI firstBatchPage(URI next, Section section) {
+        validatePage(next, section);
+        return UriComponentsBuilder.fromUri(next)
+                .replaceQueryParam("pg", "1")
+                .replaceQueryParam("it", PAGE_SIZE)
+                .build(true)
+                .toUri();
     }
 
     private Element loadListing(URI page) {
@@ -182,10 +189,4 @@ public class AmericanHunterDiscoveryAdapter {
     private static Section listing(String path, String... hierarchy) {
         return new Section(path, List.of(List.of(hierarchy)), true);
     }
-
-    public record Section(String path, List<List<String>> hierarchies, boolean collectCards) {}
-
-    public record Card(String articleUrl, String title, String description) {}
-
-    public record SectionResult(List<Card> cards, String error) {}
 }

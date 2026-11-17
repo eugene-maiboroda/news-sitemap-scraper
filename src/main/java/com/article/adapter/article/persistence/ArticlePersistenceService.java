@@ -83,10 +83,11 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
     @Override
     @Transactional
     public void saveDiscoveredArticles(List<DiscoveredArticle> articles) {
-        List<DiscoveredArticle> ordered = articles.stream()
+        List<DiscoveredArticle> articlesByUrl = articles.stream()
                 .sorted(Comparator.comparing(DiscoveredArticle::articleUrl))
                 .toList();
-        jdbcTemplate.batchUpdate(UPSERT_DISCOVERED_ARTICLE_SQL, ordered, DISCOVERY_BATCH_SIZE, (statement, article) -> {
+
+        jdbcTemplate.batchUpdate(UPSERT_DISCOVERED_ARTICLE_SQL, articlesByUrl, DISCOVERY_BATCH_SIZE, (statement, article) -> {
             statement.setString(1, idGenerationPort.generateId());
             statement.setString(2, article.articleUrl());
             statement.setString(3, article.title());

@@ -1,10 +1,10 @@
 package com.article.adapter.article;
 
-import com.article.adapter.export.dto.LinkDto;
 import com.article.adapter.http.HttpContentLoader;
 import com.article.domain.Article;
 import com.article.domain.ArticleLink;
 import com.article.domain.Image;
+import com.article.domain.NamedLink;
 import com.article.domain.ParseResult;
 import com.article.port.ArticlePagePort;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
@@ -76,17 +75,11 @@ public class AmericanHunterArticleParser implements ArticlePagePort {
         }
 
         String id = ArticleParser.idFromUrl(url);
-        Elements body = scope.select(".article-rte");
+        String bodyHtml = scope.select(".article-rte").html();
         List<Image> images = images(scope, id);
-        List<String> videoUrls = scope.select(
-                        ".video-responsive iframe, .article-rte iframe, .article-rte video, .video-responsive video")
-                .stream()
-                .map(AmericanHunterArticleParser::videoUrl)
-                .filter(value -> !value.isBlank())
-                .distinct()
-                .toList();
+        List<String> videoUrls = videoUrls(scope);
 
-        if (body.html().isBlank() && images.isEmpty() && videoUrls.isEmpty()) {
+        if (bodyHtml.isBlank() && images.isEmpty() && videoUrls.isEmpty()) {
             return ParseResult.error(url, "Missing article body and media");
         }
 
@@ -107,14 +100,36 @@ public class AmericanHunterArticleParser implements ArticlePagePort {
                 .publishDate(date)
                 .author(text(author))
                 .authorLink(authorUrl.isBlank() ? null : authorUrl)
-                .content(body.html())
+                .content(bodyHtml)
                 .build();
 
-        return new ParseResult.HunterSuccess(article, scope.outerHtml(),
-                text(scope.selectFirst(".col-12.text-center:containsOwn(When you buy products through the links on our site)")),
-                links(scope, ".article-attribution .tag a[href]"),
-                links(scope, ".in-this-article .tag a[href]"),
-                links(scope, ".related-title + ul a[href]"), images, videoUrls);
+        String rawHtml = scope.outerHtml();
+        String affiliateDisclosure = text(scope.selectFirst(
+                ".col-12.text-center:containsOwn(When you buy products through the links on our site)"));
+        List<NamedLink> tags = links(scope, ".article-attribution .tag a[href]");
+        List<NamedLink> footerTags = links(scope, ".in-this-article .tag a[href]");
+        List<NamedLink> relatedStories = links(scope, ".related-title + ul a[href]");
+
+        return new ParseResult.MenuArticleSuccess(
+                article,
+                rawHtml,
+                affiliateDisclosure,
+                tags,
+                footerTags,
+                relatedStories,
+                images,
+                videoUrls
+        );
+    }
+
+    private static List<String> videoUrls(Element scope) {
+        return scope.select(
+                        ".video-responsive iframe, .article-rte iframe, .article-rte video, .video-responsive video")
+                .stream()
+                .map(AmericanHunterArticleParser::videoUrl)
+                .filter(value -> !value.isBlank())
+                .distinct()
+                .toList();
     }
 
     private static List<Image> images(Element scope, String articleId) {
@@ -135,10 +150,10 @@ public class AmericanHunterArticleParser implements ArticlePagePort {
         return images;
     }
 
-    private static List<LinkDto> links(Element scope, String selector) {
+    private static List<NamedLink> links(Element scope, String selector) {
         return scope.select(selector).stream()
-                .filter(link -> !link.text().isBlank() && !link.absUrl("href").isBlank())
-                .map(link -> new LinkDto(link.text(), link.absUrl("href")))
+                .map(link -> new NamedLink(link.text(), link.absUrl("href")))
+                .filter(link -> !link.name().isBlank() && !link.url().isBlank())
                 .distinct()
                 .toList();
     }

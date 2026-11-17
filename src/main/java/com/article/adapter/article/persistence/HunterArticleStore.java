@@ -1,9 +1,10 @@
 package com.article.adapter.article.persistence;
 
-import com.article.adapter.export.dto.LinkDto;
 import com.article.domain.Article;
 import com.article.domain.Image;
+import com.article.domain.NamedLink;
 import com.article.domain.ParseResult;
+import com.article.port.persistence.ParsedArticleStorePort;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,7 @@ import java.util.List;
 @Repository
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "collector.discovery-source", havingValue = "AMERICAN_HUNTER")
-public class HunterArticleStore {
+public class HunterArticleStore implements ParsedArticleStorePort {
 
     private static final String YOUTUBE_WATCH_PREFIX = "https://www.youtube.com/watch?v=";
 
@@ -43,8 +44,9 @@ public class HunterArticleStore {
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
+    @Override
     @Transactional
-    public void save(ParseResult.HunterSuccess result) {
+    public void save(ParseResult.MenuArticleSuccess result) {
         Article article = result.article();
         // Serialize reprocessing of the same URL before replacing its media rows.
         jdbcTemplate.queryForObject("SELECT id FROM article_links WHERE article_url = ? FOR UPDATE",
@@ -59,7 +61,7 @@ public class HunterArticleStore {
         );
     }
 
-    private void upsertArticle(ParseResult.HunterSuccess result) {
+    private void upsertArticle(ParseResult.MenuArticleSuccess result) {
         Article article = result.article();
         String tagsJson = serialize(result.tags());
         String footerTagsJson = serialize(result.footerTags());
@@ -112,7 +114,7 @@ public class HunterArticleStore {
         }
     }
 
-    private String serialize(List<LinkDto> links) {
+    private String serialize(List<NamedLink> links) {
         try {
             return objectMapper.writeValueAsString(links);
         } catch (JsonProcessingException e) {

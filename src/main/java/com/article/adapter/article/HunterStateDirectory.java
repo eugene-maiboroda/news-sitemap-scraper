@@ -4,6 +4,7 @@ import com.article.adapter.export.dto.LinkDto;
 import com.article.adapter.http.HttpContentLoader;
 import com.article.bootstrap.properties.StorageProps;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.article.port.StateDirectoryExportPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -26,7 +27,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 @ConditionalOnProperty(name = "collector.discovery-source", havingValue = "AMERICAN_HUNTER")
-public class HunterStateDirectory {
+public class HunterStateDirectory implements StateDirectoryExportPort {
 
     private static final String URL = "https://www.americanhunter.org/state-fish-game-information/";
 
@@ -34,10 +35,16 @@ public class HunterStateDirectory {
     private final ObjectMapper objectMapper;
     private final StorageProps storageProps;
 
+    @Override
     public void export() {
         String html = loader.loadText(URL);
         Directory directory = parseHtml(html);
         Path output = Path.of(storageProps.exportDir()).resolve("state-fish-game-information.json");
+        writeDirectory(directory, output);
+        log.info("[HUNTER] Exported {} states to {}", directory.states().size(), output);
+    }
+
+    private void writeDirectory(Directory directory, Path output) {
         try {
             Files.createDirectories(output.getParent());
             Path temporary = Files.createTempFile(output.getParent(), "hunter-states-", ".tmp");
@@ -50,7 +57,6 @@ public class HunterStateDirectory {
         } catch (IOException e) {
             throw new UncheckedIOException("Could not write Hunter state directory", e);
         }
-        log.info("[HUNTER] Exported {} states to {}", directory.states().size(), output);
     }
 
     Directory parseHtml(String html) {
@@ -68,11 +74,13 @@ public class HunterStateDirectory {
                 log.warn("[HUNTER] Directory row {} has no state name", row.elementSiblingIndex() + 1);
                 continue;
             }
-            List<LinkDto> links = linksByState.computeIfAbsent(state.text(), name -> new ArrayList<>());
+            String stateName = state.text();
+            List<LinkDto> links = linksByState.computeIfAbsent(stateName, name -> new ArrayList<>());
             for (Element link : row.select("td a[href]")) {
                 String url = link.absUrl("href");
-                if (!url.isBlank() && !link.text().isBlank()) {
-                    links.add(new LinkDto(link.text(), url));
+                String name = link.text();
+                if (!url.isBlank() && !name.isBlank()) {
+                    links.add(new LinkDto(name, url));
                 }
             }
         }
