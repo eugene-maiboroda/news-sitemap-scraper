@@ -1,7 +1,6 @@
 package com.article.adapter.video.persistence.entity;
 
 import com.article.domain.status.DownloadStatus;
-import com.article.domain.status.VideoPlatform;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -15,7 +14,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Entity
@@ -32,14 +30,8 @@ public class VideoEntity {
     @Column(name = "article_id")
     private String articleId;
 
-    @Enumerated(EnumType.STRING)
-    private VideoPlatform platform;
-
-    @Column(name = "jw_media_id")
-    private String jwMediaId;
-
-    @Column(name = "m3u8_url")
-    private String m3u8Url;
+    @Column(name = "source_url")
+    private String sourceUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "download_status")
@@ -51,28 +43,6 @@ public class VideoEntity {
 
     @Column(name = "file_size")
     private Long fileSize;
-
-    private String title;
-
-    private String description;
-
-    @Column(name = "thumbnail_url")
-    private String thumbnailUrl;
-
-    @Column(name = "duration_seconds")
-    private Integer durationSeconds;
-
-    @Column(name = "published_at")
-    private Instant publishedAt;
-
-    @Column(name = "connatix_content_id")
-    private String connatixContentId;
-
-    @Column(name = "connatix_stream_id")
-    private String connatixStreamId;
-
-    @Column(name = "connatix_mmid")
-    private String connatixMmid;
 
     @Column(name = "youtube_video_id")
     private String youtubeVideoId;

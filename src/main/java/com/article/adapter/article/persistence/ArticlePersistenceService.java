@@ -1,7 +1,6 @@
 package com.article.adapter.article.persistence;
 
 import com.article.adapter.article.mapper.ArticleMapper;
-import com.article.domain.Article;
 import com.article.domain.ArticleLink;
 import com.article.domain.Author;
 import com.article.domain.DiscoveredArticle;
@@ -14,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -61,7 +59,6 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
             """;
 
     private final ArticleLinkRepository linkRepository;
-    private final ObjectProvider<ArticleRepository> articleRepositoryProvider;
     private final ArticleMapper articleMapper;
     private final JdbcTemplate jdbcTemplate;
     private final IdGenerationPort idGenerationPort;
@@ -112,52 +109,25 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
 
     @Override
     @Transactional
-    public void saveArticleAndMarkParsed(Article article, String articleUrl) {
-        articleRepositoryProvider.getObject().save(articleMapper.toEntity(article));
-        linkRepository.updateStatus(articleUrl, CrawlStatus.PARSED);
-    }
-
-    @Override
-    @Transactional
     public void markError(String articleUrl, String errorMessage) {
         linkRepository.updateStatusWithError(articleUrl, CrawlStatus.ERROR, errorMessage);
     }
 
     @Override
-    public List<String> findDistinctCategories() {
-        return articleRepositoryProvider.getObject().findDistinctCategories();
-    }
-
-    @Override
-    public List<Article> findArticlesByCategory(String category, int page, int pageSize) {
-        return articleMapper.toArticles(
-                articleRepositoryProvider.getObject().findByCategoryOrderById(category, PageRequest.of(page, pageSize)));
-    }
-
-    @Override
-    public List<Article> findArticlesWithoutCategory(int page, int pageSize) {
-        return articleMapper.toArticles(
-                articleRepositoryProvider.getObject().findArticlesWithoutCategory(PageRequest.of(page, pageSize)));
-    }
-
-    @Override
-    public List<Article> findAllArticlesOrdered(int page, int pageSize) {
-        return articleMapper.toArticles(
-                articleRepositoryProvider.getObject().findAllByOrderById(PageRequest.of(page, pageSize)));
-    }
-
-    @Override
     public List<Author> findDistinctAuthors() {
-        return articleRepositoryProvider.getObject().findDistinctAuthors().stream()
-                .map(row -> new Author(
-                        idGenerationPort.generateId(),
-                        row.getAuthorName(),
-                        row.getAuthorUrl(),
-                        null,
-                        null,
-                        null
-                ))
-                .toList();
+        return jdbcTemplate.query("""
+                SELECT DISTINCT ON (btrim(author_link))
+                    btrim(author_link) AS profile_url, author
+                FROM articles
+                WHERE btrim(author_link) ~* '^https?://[^/]+'
+                ORDER BY btrim(author_link), NULLIF(btrim(author), '') NULLS LAST, id
+                """, (row, index) -> new Author(
+                null,
+                row.getString("author"),
+                row.getString("profile_url"),
+                null,
+                null,
+                null
+        ));
     }
 }
-

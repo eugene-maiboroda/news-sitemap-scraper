@@ -1,6 +1,5 @@
 package com.article.port.persistence;
 
-import com.article.domain.Article;
 import com.article.domain.ArticleLink;
 import com.article.domain.Author;
 import com.article.domain.DiscoveredArticle;
@@ -15,17 +14,7 @@ public interface ArticlePersistencePort {
 
     List<ArticleLink> findNewBatch(int limit);
 
-    void saveArticleAndMarkParsed(Article article, String articleUrl);
-
     void markError(String articleUrl, String errorMessage);
-
-    List<String> findDistinctCategories();
-
-    List<Article> findArticlesByCategory(String category, int page, int pageSize);
-
-    List<Article> findArticlesWithoutCategory(int page, int pageSize);
-
-    List<Article> findAllArticlesOrdered(int page, int pageSize);
 
     List<Author> findDistinctAuthors();
 }

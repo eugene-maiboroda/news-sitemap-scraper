@@ -14,12 +14,11 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ArticleCollectorService implements ArticleCollectionUseCase {
 
+    private final AuthorUseCase authorUseCase;
     private final ParseArticleUseCase parseArticleUseCase;
     private final DiscoveryLinkUseCase discoveryLinkUseCase;
-    private final ExtractTopicUseCase extractTopicUseCase;
     private final ImagesDownloaderUseCase imagesDownloaderUseCase;
     private final VideosDownloadUseCase videosDownloadUseCase;
-    private final ExportJsonUseCase exportJsonUseCase;
     private final StepsProps steps;
     private final CollectorProps collector;
     private final ObjectProvider<StateDirectoryExportPort> stateDirectoryExportProvider;
@@ -27,24 +26,27 @@ public class ArticleCollectorService implements ArticleCollectionUseCase {
     @Override
     public void run() {
         try {
+            if (steps.exportJson().enabled()) {
+                throw new IllegalStateException("Article JSON export is not configured for NRA");
+            }
+
             runIfEnabled(steps.discoverLinks(), discoveryLinkUseCase::discoverLinks);
             runIfEnabled(steps.parsePages(), parseArticleUseCase::parsePages);
+
+            if (steps.extractAuthors() != null && steps.extractAuthors().enabled()) {
+                authorUseCase.extractAuthors();
+            }
 
             if (collector.site() == CollectorProps.Site.AMERICAN_HUNTER) {
                 runIfEnabled(steps.parsePages(), () -> stateDirectoryExportProvider.getObject().export());
                 log.info("American Hunter Article Collector finished");
                 return;
             }
-            runIfEnabled(steps.extractTopics(), extractTopicUseCase::extractTopics);
             runIfEnabled(steps.downloadImages(), imagesDownloaderUseCase::downloadImages);
             runIfEnabled(steps.downloadVideos(), videosDownloadUseCase::downloadVideo);
-            runIfEnabled(steps.exportJson(), exportJsonUseCase::exportJson);
-
-
-
-            log.info("NYPost Article Collector finished");
+            log.info("Article collector finished");
         } catch (Exception e) {
-            log.error("NYPost Article Collector failed", e);
+            log.error("Article collector failed", e);
         }
     }
 

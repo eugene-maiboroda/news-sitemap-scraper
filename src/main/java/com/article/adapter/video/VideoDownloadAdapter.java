@@ -5,7 +5,6 @@ import com.article.bootstrap.properties.StorageProps;
 import com.article.bootstrap.properties.VideoProps;
 import com.article.domain.ArticleVideoRef;
 import com.article.domain.DownloadResult;
-import com.article.domain.status.VideoPlatform;
 import com.article.port.VideoDownloadPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,13 +21,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Downloads video files via the external {@code yt-dlp} binary (a Java {@link ProcessBuilder}
- * invocation, mirroring how the Python reference script shells out to the same tool) — no
- * Playwright, no HTTP scraping, all inputs already come from the {@code videos} table. Supports
- * only JW Player ({@link ArticleVideoRef#m3u8Url()}) and YouTube ({@link ArticleVideoRef#youtubeVideoId()});
- * Connatix is out of scope and never resolves to a URL here.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -41,14 +33,14 @@ public class VideoDownloadAdapter implements VideoDownloadPort {
     public DownloadResult download(ArticleVideoRef ref) {
         String url = resolveUrl(ref);
         if (url == null) {
-            log.warn("[VIDEO][SKIP] Missing source data id={} platform={}", ref.id(), ref.platform());
+            log.warn("[VIDEO][SKIP] Missing HTTP(S) video URL id={}", ref.id());
             return DownloadResult.failed();
         }
 
         try {
-            Path dir = Path.of(storageProps.videosDir(), ParseUtils.categorySlug(ref.category()));
+            Path dir = Path.of(storageProps.videosDir(), ParseUtils.categorySlug(null));
             String prefix = ParseUtils.videoFilePrefix(
-                    ref.category(), ref.articleId(), ref.platform().name(), ParseUtils.shortId(ref.id()));
+                    null, ref.articleId(), "video", ParseUtils.shortId(ref.id()));
             Path target = dir.resolve(prefix + ".mp4");
 
             if (isValidFile(target)) {
@@ -65,7 +57,7 @@ public class VideoDownloadAdapter implements VideoDownloadPort {
                     "--no-playlist",
                     "--merge-output-format", "mp4");
 
-            log.info(ref.platform() == VideoPlatform.YOUTUBE ? "Downloading YouTube:\n{}" : "Downloading JW video:\n{}", url);
+            log.info("Downloading video {}", url);
             log.info("Executing:\n{}", String.join(" ", command));
 
             Process process = new ProcessBuilder(command)
@@ -93,13 +85,14 @@ public class VideoDownloadAdapter implements VideoDownloadPort {
     }
 
     private String resolveUrl(ArticleVideoRef ref) {
-        return switch (ref.platform()) {
-            case JW_TOP -> StringUtils.hasText(ref.m3u8Url()) ? ref.m3u8Url() : null;
-            case YOUTUBE -> StringUtils.hasText(ref.youtubeVideoId())
-                    ? "https://www.youtube.com/watch?v=" + ref.youtubeVideoId()
-                    : null;
-            case CONNATIX_BOTTOM -> null;
-        };
+        String sourceUrl = ref.sourceUrl();
+        if (sourceUrl != null && (sourceUrl.startsWith("https://") || sourceUrl.startsWith("http://"))) {
+            return sourceUrl;
+        }
+        if (StringUtils.hasText(ref.youtubeVideoId())) {
+            return "https://www.youtube.com/watch?v=" + ref.youtubeVideoId();
+        }
+        return null;
     }
 
     private boolean isValidFile(Path path) throws IOException {

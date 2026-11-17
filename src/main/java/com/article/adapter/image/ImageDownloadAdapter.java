@@ -24,8 +24,8 @@ public class ImageDownloadAdapter implements ImageDownloadPort {
     @Override
     public DownloadResult download(ArticleImageRef ref) {
         try {
-            Path dir = Path.of(storageProps.imagesDir(), ParseUtils.categorySlug(ref.category()));
-            String fileName = ParseUtils.imageFilePrefix(ref.category(), ref.articleId(), ref.position()) + ParseUtils.resolveExtension(ref.imageUrl());
+            Path dir = Path.of(storageProps.imagesDir(), ParseUtils.categorySlug(null));
+            String fileName = ParseUtils.imageFilePrefix(null, ref.articleId(), ref.position()) + ParseUtils.resolveExtension(ref.imageUrl());
             Path target = dir.resolve(fileName);
 
             if (Files.exists(target)) {

@@ -6,7 +6,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record StorageProps(
         String exportDir,
         String imagesDir,
-        String videosDir,
-        String avatarsDir
+        String videosDir
 ) {
 }
