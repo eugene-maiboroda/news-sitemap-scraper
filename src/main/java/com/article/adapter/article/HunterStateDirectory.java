@@ -26,7 +26,7 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(name = "collector.discovery-source", havingValue = "AMERICAN_HUNTER")
+@ConditionalOnProperty(name = "collector.site", havingValue = "AMERICAN_HUNTER", matchIfMissing = true)
 public class HunterStateDirectory implements StateDirectoryExportPort {
 
     private static final String URL = "https://www.americanhunter.org/state-fish-game-information/";

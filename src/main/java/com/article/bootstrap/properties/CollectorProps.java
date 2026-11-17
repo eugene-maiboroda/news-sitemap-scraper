@@ -8,11 +8,16 @@ import java.util.List;
 @ConfigurationProperties(prefix = "collector")
 public record CollectorProps(
         int parseThreads,
-        List<String> sitemapUrls,
-        @DefaultValue("SITEMAP") DiscoverySource discoverySource
+        @DefaultValue("AMERICAN_HUNTER") Site site,
+        @DefaultValue("MENU") DiscoverySource discoverySource,
+        List<String> sitemapUrls
 ) {
     public enum DiscoverySource {
-        SITEMAP,
+        MENU,
+        SITEMAP
+    }
+
+    public enum Site {
         AMERICAN_HUNTER
     }
 }

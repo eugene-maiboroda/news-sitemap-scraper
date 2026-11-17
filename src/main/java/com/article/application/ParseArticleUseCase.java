@@ -23,7 +23,6 @@ public class ParseArticleUseCase {
     private final ArticlePersistencePort articlePersistencePort;
     private final ArticlePagePort articlePagePort;
     private final ParallelExecutor parallelExecutor;
-    private final ParsedMediaService parsedMediaService;
     private final ObjectProvider<ParsedArticleStorePort> parsedArticleStoreProvider;
 
     public void parsePages() {
@@ -43,12 +42,6 @@ public class ParseArticleUseCase {
     private void parseSingle(ArticleLink link) {
         long start = System.currentTimeMillis();
         switch (articlePagePort.parse(link)) {
-            case ParseResult.Success success -> {
-                articlePersistencePort.saveArticleAndMarkParsed(success.article(), link.articleUrl());
-                parsedMediaService.saveImages(success.images());
-                parsedMediaService.saveVideos(success.videos());
-                log.info("[PARSED] {} ({} ms)", link.articleUrl(), System.currentTimeMillis() - start);
-            }
             case ParseResult.MenuArticleSuccess success -> saveMenuArticle(link.articleUrl(), success, start);
             case ParseResult.Failure failure -> {
                 articlePersistencePort.markError(link.articleUrl(), failure.error().reason());

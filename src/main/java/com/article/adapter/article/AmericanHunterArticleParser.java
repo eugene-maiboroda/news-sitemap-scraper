@@ -1,6 +1,7 @@
 package com.article.adapter.article;
 
 import com.article.adapter.http.HttpContentLoader;
+import com.article.adapter.shared.ArticleIds;
 import com.article.domain.Article;
 import com.article.domain.ArticleLink;
 import com.article.domain.Image;
@@ -31,7 +32,7 @@ import java.util.regex.Pattern;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(name = "collector.discovery-source", havingValue = "AMERICAN_HUNTER")
+@ConditionalOnProperty(name = "collector.site", havingValue = "AMERICAN_HUNTER", matchIfMissing = true)
 public class AmericanHunterArticleParser implements ArticlePagePort {
 
     private static final DateTimeFormatter DATE_IN_BYLINE = DateTimeFormatter
@@ -74,7 +75,7 @@ public class AmericanHunterArticleParser implements ArticlePagePort {
             return ParseResult.error(url, "Missing article title or container");
         }
 
-        String id = ArticleParser.idFromUrl(url);
+        String id = ArticleIds.fromUrl(url);
         String bodyHtml = scope.select(".article-rte").html();
         List<Image> images = images(scope, id);
         List<String> videoUrls = videoUrls(scope);

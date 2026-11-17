@@ -4,16 +4,6 @@ import java.util.List;
 
 public sealed interface ParseResult {
 
-    record Success(
-
-            Article article,
-
-            List<Image> images,
-
-            List<Video> videos
-    ) implements ParseResult {
-    }
-
     record MenuArticleSuccess(
 
             Article article,
@@ -38,10 +28,6 @@ public sealed interface ParseResult {
 
             ContentError error
     ) implements ParseResult {
-    }
-
-    static ParseResult ok(Article article, List<Image> images, List<Video> videos) {
-        return new Success(article, images, videos);
     }
 
     static ParseResult error(String url, String reason) {

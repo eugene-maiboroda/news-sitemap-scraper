@@ -17,7 +17,7 @@ import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "collector.discovery-source", havingValue = "AMERICAN_HUNTER")
+@ConditionalOnProperty(name = "collector.site", havingValue = "AMERICAN_HUNTER", matchIfMissing = true)
 public class HunterArticleStore implements ParsedArticleStorePort {
 
     private static final String YOUTUBE_WATCH_PREFIX = "https://www.youtube.com/watch?v=";

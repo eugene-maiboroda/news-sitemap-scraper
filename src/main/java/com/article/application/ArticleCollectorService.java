@@ -30,7 +30,7 @@ public class ArticleCollectorService implements ArticleCollectionUseCase {
             runIfEnabled(steps.discoverLinks(), discoveryLinkUseCase::discoverLinks);
             runIfEnabled(steps.parsePages(), parseArticleUseCase::parsePages);
 
-            if (collector.discoverySource() == CollectorProps.DiscoverySource.AMERICAN_HUNTER) {
+            if (collector.site() == CollectorProps.Site.AMERICAN_HUNTER) {
                 runIfEnabled(steps.parsePages(), () -> stateDirectoryExportProvider.getObject().export());
                 log.info("American Hunter Article Collector finished");
                 return;

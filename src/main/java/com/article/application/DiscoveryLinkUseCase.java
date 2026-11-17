@@ -19,36 +19,33 @@ import java.util.Map;
 @Slf4j
 @RequiredArgsConstructor
 public class DiscoveryLinkUseCase {
-    private final CollectorProps props;
     private final ArticlePersistencePort articlePersistencePort;
-    private final SitemapPort sitemapPort;
     private final MenuDiscoveryPort menuDiscovery;
+    private final SitemapPort sitemapPort;
+    private final CollectorProps collector;
 
     public void discoverLinks() {
         log.info("Step: DISCOVER LINKS");
-        if (props.discoverySource() == CollectorProps.DiscoverySource.AMERICAN_HUNTER) {
-            discoverMenuLinks();
-            return;
+
+        switch (collector.discoverySource()) {
+            case MENU -> discoverMenuLinks();
+            case SITEMAP -> discoverSitemapLinks();
         }
-        discoverSitemapLinks();
     }
 
     private void discoverSitemapLinks() {
-        List<String> sitemapUrls = props.sitemapUrls();
-
+        List<String> sitemapUrls = collector.sitemapUrls();
         if (sitemapUrls == null || sitemapUrls.isEmpty()) {
-            log.warn("No sitemap URLs configured. Add urls to collector.sitemap-urls in application.properties");
+            log.warn("No sitemap URLs configured. Set collector.sitemap-urls in application.properties");
             return;
         }
-
-        log.info("NYPost Article Collector started | sitemaps={}", sitemapUrls.size());
 
         for (String sitemapUrl : sitemapUrls) {
             try {
                 List<ArticleLink> links = sitemapPort.discoverLinks(sitemapUrl);
                 articlePersistencePort.insertLinks(links);
                 log.info("Discovered {} links from {}", links.size(), sitemapUrl);
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 log.error("Failed to discover links from {}", sitemapUrl, e);
             }
         }

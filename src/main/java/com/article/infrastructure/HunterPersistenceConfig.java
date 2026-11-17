@@ -12,7 +12,7 @@ import org.springframework.orm.jpa.persistenceunit.PersistenceManagedTypes;
 import org.springframework.orm.jpa.persistenceunit.PersistenceManagedTypesScanner;
 
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnProperty(name = "collector.discovery-source", havingValue = "AMERICAN_HUNTER")
+@ConditionalOnProperty(name = "collector.site", havingValue = "AMERICAN_HUNTER", matchIfMissing = true)
 @EnableJpaRepositories(basePackages = "com.article", excludeFilters = @ComponentScan.Filter(
         type = FilterType.REGEX, pattern = {
                 "com[.]article[.]adapter[.]article[.]persistence[.]ArticleRepository",
