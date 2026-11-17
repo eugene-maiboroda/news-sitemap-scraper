@@ -1,16 +1,16 @@
 version: "3.9"
 
 services:
-  si-postgres-hunter:
+  si-postgres-rifleman:
     image: postgres:15
     environment:
-      POSTGRES_DB: hunter_articles
+      POSTGRES_DB: rifleman_articles
       POSTGRES_USER: eyal
-      POSTGRES_PASSWORD: eyal_hunter
+      POSTGRES_PASSWORD: eyal_rifleman
     ports:
-      - "5441:5432"
+      - "5442:5432"
     volumes:
-       - si_article_hunter_pgdata:/var/lib/postgresql/data
+       - si_article_rifleman_pgdata:/var/lib/postgresql/data
 
 volumes:
-  si_article_hunter_pgdata:
+  si_article_rifleman_pgdata:

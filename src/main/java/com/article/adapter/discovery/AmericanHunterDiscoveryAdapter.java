@@ -5,6 +5,7 @@ import com.article.port.MenuDiscoveryPort;
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Component
+@ConditionalOnProperty(name = "collector.site", havingValue = "AMERICAN_HUNTER", matchIfMissing = true)
 @RequiredArgsConstructor
 public class AmericanHunterDiscoveryAdapter implements MenuDiscoveryPort {
 

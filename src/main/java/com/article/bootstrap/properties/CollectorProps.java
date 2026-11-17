@@ -18,6 +18,7 @@ public record CollectorProps(
     }
 
     public enum Site {
-        AMERICAN_HUNTER
+        AMERICAN_HUNTER,
+        AMERICAN_RIFLEMAN
     }
 }

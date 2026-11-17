@@ -49,6 +49,31 @@ Pipeline знаходить URL статей, парсить сторінки, �
 
 Логін і пароль можна залишити такими самими або змінити. Якщо змінюєш, узгодь `POSTGRES_USER` і `POSTGRES_PASSWORD` із налаштуваннями підключення Spring, а в `psql -U` передай відповідний логін. Після запуску нового сервісу застосуй SQL-схему до нової БД до старту застосунку.
 
+### Створення БД і таблиць
+
+Для Rifleman із новим порожнім томом офіційний образ PostgreSQL автоматично створить `rifleman_articles` зі значення `POSTGRES_DB`. Запуск і перевірка з хоста:
+
+```sh
+docker compose -f docker/docker-compose.yml up -d si-postgres-rifleman
+psql -h localhost -p 5442 -U eyal -d postgres -c '\l'
+```
+
+Дочекайся готовності PostgreSQL і перевір, що `rifleman_articles` є в списку. Якщо сервер доступний, але цієї БД немає, наприклад через повторно використаний том, створи її вручну. Підключайся до службової БД `postgres` під користувачем із правом створювати БД:
+
+```sh
+psql -h localhost -p 5442 -U eyal -d postgres \
+  -v ON_ERROR_STOP=1 -c 'CREATE DATABASE rifleman_articles;'
+```
+
+Коли цільова БД існує, створи в ній таблиці. Якщо новий сайт використовує ту саму схему, застосуй наявний скрипт:
+
+```sh
+psql -h localhost -p 5442 -U eyal -d rifleman_articles \
+  -v ON_ERROR_STOP=1 -f database/hunter-schema.sql
+```
+
+`hunter-schema.sql` створює таблиці та індекси в БД, яку передано через `-d`. Для Hunter підстав `5441` і `hunter_articles`.
+
 ## Кроки і режими
 
 `*.enabled=true` вмикає показаний крок, `false` його пропускає. Порядок звичайного запуску наведено в таблиці. Для окремого запуску одного кроку вимкни решту.
