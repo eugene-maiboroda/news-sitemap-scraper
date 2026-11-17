@@ -14,8 +14,7 @@ public class HttpHeadersProvider {
     private static final Map<String, String> DEFAULT_HEADERS = Map.of(
             "User-Agent", USER_AGENT,
             "Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language", "en-US,en;q=0.9",
-            "Referer", "https://nypost.com/"
+            "Accept-Language", "en-US,en;q=0.9"
     );
 
     public Map<String, String> defaultHeaders() {

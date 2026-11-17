@@ -39,8 +39,7 @@ public class VideoDownloadAdapter implements VideoDownloadPort {
 
         try {
             Path dir = Path.of(storageProps.videosDir(), ParseUtils.categorySlug(null));
-            String prefix = ParseUtils.videoFilePrefix(
-                    null, ref.articleId(), "video", ParseUtils.shortId(ref.id()));
+            String prefix = ref.id();
             Path target = dir.resolve(prefix + ".mp4");
 
             if (isValidFile(target)) {

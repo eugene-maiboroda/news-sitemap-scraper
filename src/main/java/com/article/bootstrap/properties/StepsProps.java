@@ -9,8 +9,7 @@ public record StepsProps(
         AuthorStep extractAuthors,
         Step downloadImages,
         Step downloadVideos,
-        Step exportJson,
-        Step extractConnatixVideos
+        Step exportJson
 ) {
 
     public record AuthorStep(
