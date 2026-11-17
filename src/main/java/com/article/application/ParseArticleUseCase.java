@@ -6,11 +6,10 @@ import com.article.domain.Image;
 import com.article.domain.ParseResult;
 import com.article.port.ArticlePagePort;
 import com.article.port.persistence.ArticlePersistencePort;
-import com.article.port.persistence.ParsedArticleStorePort;
-import com.article.port.persistence.ParsedArticleStorePort.ArchivedArticle;
+import com.article.port.persistence.ParsedArticlePersistencePort;
+import com.article.port.persistence.ParsedArticlePersistencePort.ArchivedArticle;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -28,7 +27,7 @@ public class ParseArticleUseCase {
     private final ArticlePersistencePort articlePersistencePort;
     private final ArticlePagePort articlePagePort;
     private final ParallelExecutor parallelExecutor;
-    private final ObjectProvider<ParsedArticleStorePort> parsedArticleStoreProvider;
+    private final ParsedArticlePersistencePort parsedArticlePersistence;
 
     public void parsePages() {
         log.info("Step: PARSE PAGES");
@@ -45,7 +44,6 @@ public class ParseArticleUseCase {
     }
 
     public void backfillCaptions() {
-        ParsedArticleStorePort store = parsedArticleStoreProvider.getObject();
         int limit = Math.clamp(stepsProps.parsePages().batchSize(), 1, MAX_ARCHIVE_BATCH_SIZE);
         LongAdder updated = new LongAdder();
         LongAdder failed = new LongAdder();
@@ -53,12 +51,12 @@ public class ParseArticleUseCase {
         String afterId = "";
         List<ArchivedArticle> batch;
 
-        while (!(batch = store.findCaptionBackfillBatch(afterId, limit)).isEmpty()) {
+        while (!(batch = parsedArticlePersistence.findCaptionBackfillBatch(afterId, limit)).isEmpty()) {
             parallelExecutor.execute(batch, article -> {
                 try {
                     for (Image image : articlePagePort.parseArchivedImages(article.id(), article.url(), article.rawHtml())) {
                         if (image.getCaption() != null && !image.getCaption().isBlank()) {
-                            updated.add(store.fillMissingCaption(image));
+                            updated.add(parsedArticlePersistence.fillMissingCaption(image));
                         }
                     }
                 } catch (RuntimeException e) {
@@ -88,10 +86,10 @@ public class ParseArticleUseCase {
 
     private void saveMenuArticle(String url, ParseResult.MenuArticleSuccess success, long start) {
         try {
-            parsedArticleStoreProvider.getObject().save(success);
+            parsedArticlePersistence.save(success);
             log.info("[PARSED] {} ({} ms)", url, System.currentTimeMillis() - start);
         } catch (DataAccessException e) {
-            articlePersistencePort.markError(url, "Failed to persist Hunter article");
+            articlePersistencePort.markError(url, "Failed to persist article");
             log.warn("[ERROR] Failed to persist menu article {}", url, e);
         }
     }

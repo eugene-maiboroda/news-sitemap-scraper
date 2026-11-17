@@ -23,7 +23,7 @@ import java.util.Set;
 public class AmericanRiflemanDiscoveryAdapter implements MenuDiscoveryPort {
 
     private static final String BASE_URL = "https://www.americanrifleman.org";
-    private static final String PAGE_SIZE = "20000";
+    private static final String PAGE_SIZE = "1000";
     private static final List<Section> SECTIONS = List.of(
             listing("/news/", "News"),
             new Section("/news/new-for-2026/", List.of(List.of("New For 2026"), List.of("News", "New For 2026")), true),

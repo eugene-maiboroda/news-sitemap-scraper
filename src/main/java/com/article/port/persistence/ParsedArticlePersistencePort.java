@@ -5,7 +5,7 @@ import com.article.domain.Image;
 
 import java.util.List;
 
-public interface ParsedArticleStorePort {
+public interface ParsedArticlePersistencePort {
 
     void save(ParseResult.MenuArticleSuccess result);
 
