@@ -85,7 +85,7 @@ psql -h localhost -p 5442 -U eyal -d rifleman_articles \
 | `steps.extract-authors.enabled` | Читає унікальні посилання на авторів зі збережених статей, завантажує профілі та пише `AllAuthors.json`. Селектори імені, біографії й фото визначені в `AuthorParser`. |
 | `steps.download-images.enabled` | Завантажує фото з черги `PENDING`, записує шлях, розмір і результат завантаження в БД. |
 | `steps.download-videos.enabled` | Завантажує відео з черги `PENDING` через `yt-dlp`, записує шлях, розмір і результат у БД. |
-| `steps.export-json.enabled` | Пише `american-hunter-articles.json` зі збережених даних. Один запис на URL, усі розділи в `menuPaths`, медіа як URL із позиціями. Працює самостійно з вимкненим збором. |
+| `steps.export-json.enabled` | Пише JSON статей зі збережених даних. Один запис на URL, усі розділи в `menuPaths`, медіа як URL із позиціями. Працює самостійно з вимкненим збором. |
 
 `steps.parse-pages.source=HTTP` використовує живі сторінки. `RAW_HTML` у поточній реалізації Hunter читає збережений `articles.raw_html` і дозаповнює порожні `image.caption`. Коли парсинг увімкнено в режимі `RAW_HTML`, pipeline виконує лише це дозаповнення й завершується. Для експорту вимкни `steps.parse-pages.enabled`.
 
@@ -101,6 +101,7 @@ psql -h localhost -p 5442 -U eyal -d rifleman_articles \
 | `collector.parse-threads` | Кількість потоків спільного виконавця, який використовують парсинг, збір авторів і завантаження медіа. |
 | `steps.parse-pages.batch-size` | Розмір пакета парсингу. У RAW_HTML застосовується окреме обмеження в `ParseArticleUseCase`. |
 | `steps.download-images.batch-size`, `steps.download-videos.batch-size` | Розмір пакетів черг завантаження. |
+| `steps.export-json.file-name` | Необов’язкова назва файлу в `storage.export-dir`. Типові назви — `american-hunter-articles.json` і `american-rifleman-articles.json` за `collector.site`. |
 | `steps.export-json.batch-size` | Додатний розмір пакета читання для експорту. |
 | `steps.discover-links.batch-size` | Є в конфігурації, поточний Discovery не читає це значення. JDBC-запис має власні розміри пакетів. |
 | `storage.export-dir`, `storage.images-dir`, `storage.videos-dir` | Директорії JSON, завантажених фото й відео. |
@@ -114,6 +115,6 @@ psql -h localhost -p 5442 -U eyal -d rifleman_articles \
 3. **Зареєструй сайт.** Додай значення в `CollectorProps.Site` і підключи адаптер через `@ConditionalOnProperty(name = "collector.site", havingValue = "NEW_SITE")`, підставивши фактичне значення. Додай відповідну умову і до наявного `AmericanHunterDiscoveryAdapter`, який зараз реєструється безумовно, щоб Spring бачив один `MenuDiscoveryPort` для вибраного сайту. Перевір усі обов’язкові Spring-залежності для вибраного сайту. `DiscoveryLinkUseCase` отримує `MenuDiscoveryPort` навіть у режимі SITEMAP, а парсинг має залежності від `ArticlePagePort` і `ParsedArticleStorePort` навіть із вимкненим кроком. Для першого запуску нового сайту потрібні сумісні реалізації або окремо погоджена зміна підключення цих компонентів.
 4. **Перевір Discovery окремо.** Підготуй БД за розділом «Окрема БД для нового сайту». Увімкни тільки `steps.discover-links.enabled`, перевір кілька розділів на окремій локальній БД. Один URL у кількох розділах має створити один рядок із повною картою `menu_paths`. Якщо потрібен SITEMAP, використай спільний `SitemapPort` і врахуй, що сам XML не дає шляхів меню.
 5. **Додай парсинг і збереження.** Передай приклади статей із різною розміткою. Реалізуй `ArticlePagePort` і підключи сумісний `ParsedArticleStorePort` для нового сайту. Визнач джерела заголовка, дати, автора, тіла, міток і медіа. Перевір повторний запис і помилки. Окремо визнач, чи потрібен цьому сайту режим повторного читання HTML.
-6. **Погодь клієнтський JSON.** Реалізуй спільний `ArticleJsonExportPort` у пакеті нового сайту. JDBC-читання й DTO розмісти поруч з адаптером, використай спільний `JsonExportAdapter`. Запусти тільки експорт і звір кількість записів, унікальні URL, шляхи й медіа з БД.
+6. **Погодь клієнтський JSON.** Для спільної схеми БД і JSON використай чинний `ArticleJsonExportAdapter` і за потреби задай `steps.export-json.file-name`. Якщо потрібен окремий формат, підключи відповідну реалізацію `ArticleJsonExportPort`. Запусти тільки експорт і звір кількість записів, унікальні URL, шляхи й медіа з БД.
 
 Для передачі задачі в ChatGPT дай цей гайд разом із кодом згаданих портів і чинних адаптерів, картою меню та HTML-зразками. Початковий результат — перевірена карта `Section` і Discovery для одного розділу. Розширюй збір після перевірки кількох розділів і повторного запуску.

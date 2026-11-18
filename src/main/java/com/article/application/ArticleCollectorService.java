@@ -43,7 +43,9 @@ public class ArticleCollectorService implements ArticleCollectionUseCase {
 
             runIfEnabled(steps.downloadImages(), imagesDownloaderUseCase::downloadImages);
             runIfEnabled(steps.downloadVideos(), videosDownloadUseCase::downloadVideo);
-            runIfEnabled(steps.exportJson(), this::exportArticles);
+            if (steps.exportJson().enabled()) {
+                exportArticles();
+            }
             log.info("Article collector finished");
         } catch (Exception e) {
             log.error("Article collector failed", e);

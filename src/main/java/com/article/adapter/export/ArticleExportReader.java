@@ -1,11 +1,12 @@
-package com.article.adapter.export.hunter;
+package com.article.adapter.export;
+
+import com.article.adapter.export.dto.ArticleExportDto;
 
 import com.article.domain.NamedLink;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -21,8 +22,7 @@ import java.util.Objects;
 
 @Repository
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "collector.site", havingValue = "AMERICAN_HUNTER", matchIfMissing = true)
-class HunterArticleExportReader {
+public class ArticleExportReader {
 
     private static final String ARTICLES_SQL = """
             SELECT article.id, article.article_url, article.title, links.discovery_description,
@@ -52,7 +52,7 @@ class HunterArticleExportReader {
     private final NamedParameterJdbcTemplate jdbc;
     private final ObjectMapper objectMapper;
 
-    public List<HunterArticleExportDto> readBatch(long offset, int batchSize) {
+    public List<ArticleExportDto> readBatch(long offset, int batchSize) {
         List<ArticleRow> rows = jdbc.query(ARTICLES_SQL, Map.of("offset", offset, "batchSize", batchSize),
                 (row, index) -> readArticle(row));
         if (rows.isEmpty()) {
@@ -60,16 +60,28 @@ class HunterArticleExportReader {
         }
 
         List<String> ids = rows.stream().map(ArticleRow::id).toList();
-        Map<String, List<HunterArticleExportDto.Photo>> images = readMedia(IMAGES_SQL, ids,
-                (row, index) -> new HunterArticleExportDto.Photo(
-                        optionalText(row.getString("caption")), row.getString("image_url"), row.getInt("position")));
-        Map<String, List<HunterArticleExportDto.Video>> videos = readMedia(VIDEOS_SQL, ids,
-                (row, index) -> new HunterArticleExportDto.Video(row.getString("source_url"), row.getInt("position")));
+        Map<String, List<ArticleExportDto.Photo>> images = readImages(ids);
+        Map<String, List<ArticleExportDto.Video>> videos = readVideos(ids);
 
         return rows.stream()
                 .map(row -> row.toDto(images.getOrDefault(row.id(), List.of()),
                         videos.getOrDefault(row.id(), List.of())))
                 .toList();
+    }
+
+    private Map<String, List<ArticleExportDto.Photo>> readImages(List<String> ids) {
+        return readMedia(IMAGES_SQL, ids, (row, index) -> new ArticleExportDto.Photo(
+                optionalText(row.getString("caption")),
+                row.getString("image_url"),
+                row.getInt("position")
+        ));
+    }
+
+    private Map<String, List<ArticleExportDto.Video>> readVideos(List<String> ids) {
+        return readMedia(VIDEOS_SQL, ids, (row, index) -> new ArticleExportDto.Video(
+                row.getString("source_url"),
+                row.getInt("position")
+        ));
     }
 
     private ArticleRow readArticle(ResultSet row) throws SQLException {
@@ -148,9 +160,9 @@ class HunterArticleExportReader {
             List<NamedLink> relatedStories
     ) {
 
-        private HunterArticleExportDto toDto(
-                List<HunterArticleExportDto.Photo> images, List<HunterArticleExportDto.Video> videos) {
-            return new HunterArticleExportDto(articleUrl, title, description, publishedDate, author, authorLink,
+        private ArticleExportDto toDto(
+                List<ArticleExportDto.Photo> images, List<ArticleExportDto.Video> videos) {
+            return new ArticleExportDto(articleUrl, title, description, publishedDate, author, authorLink,
                     menuPaths, tags, images, videos, affiliateDisclosure, content, footerTags, relatedStories);
         }
     }

@@ -1,11 +1,11 @@
-package com.article.adapter.export.hunter;
+package com.article.adapter.export;
 
-import com.article.adapter.export.JsonExportAdapter;
+import com.article.adapter.export.dto.ArticleExportDto;
+import com.article.bootstrap.properties.CollectorProps;
 import com.article.bootstrap.properties.StepsProps;
 import com.article.bootstrap.properties.StorageProps;
 import com.article.port.ArticleJsonExportPort;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,19 +15,18 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "collector.site", havingValue = "AMERICAN_HUNTER", matchIfMissing = true)
-public class HunterArticleJsonExportAdapter implements ArticleJsonExportPort {
+public class ArticleJsonExportAdapter implements ArticleJsonExportPort {
 
-    private static final String FILE_NAME = "american-hunter-articles.json";
-
-    private final HunterArticleExportReader reader;
+    private final ArticleExportReader reader;
     private final JsonExportAdapter writer;
     private final StepsProps steps;
     private final StorageProps storage;
+    private final CollectorProps collector;
 
     @Override
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
@@ -37,8 +36,8 @@ public class HunterArticleJsonExportAdapter implements ArticleJsonExportPort {
             throw new IllegalArgumentException("steps.export-json.batch-size must be positive");
         }
 
-        Path output = Path.of(storage.exportDir()).resolve(FILE_NAME);
-        Iterable<HunterArticleExportDto> articles = () -> new ArticleIterator(batchSize);
+        Path output = Path.of(storage.exportDir()).resolve(exportFileName());
+        Iterable<ArticleExportDto> articles = () -> new ArticleIterator(batchSize);
         try {
             writer.export(output, "articles", articles);
         } catch (IOException e) {
@@ -46,10 +45,24 @@ public class HunterArticleJsonExportAdapter implements ArticleJsonExportPort {
         }
     }
 
-    private final class ArticleIterator implements Iterator<HunterArticleExportDto> {
+    private String exportFileName() {
+        String configuredName = steps.exportJson().fileName();
+        if (configuredName == null || configuredName.isBlank()) {
+            return collector.site().name().toLowerCase(Locale.ROOT).replace('_', '-') + "-articles.json";
+        }
+
+        Path fileName = Path.of(configuredName);
+        if (fileName.isAbsolute() || !configuredName.equals(fileName.getFileName().toString())
+                || ".".equals(configuredName) || "..".equals(configuredName)) {
+            throw new IllegalArgumentException("steps.export-json.file-name must be a file name");
+        }
+        return configuredName;
+    }
+
+    private final class ArticleIterator implements Iterator<ArticleExportDto> {
 
         private final int batchSize;
-        private Iterator<HunterArticleExportDto> batch = List.<HunterArticleExportDto>of().iterator();
+        private Iterator<ArticleExportDto> batch = List.<ArticleExportDto>of().iterator();
         private long offset;
         private boolean exhausted;
 
@@ -60,7 +73,7 @@ public class HunterArticleJsonExportAdapter implements ArticleJsonExportPort {
         @Override
         public boolean hasNext() {
             if (!batch.hasNext() && !exhausted) {
-                List<HunterArticleExportDto> articles = reader.readBatch(offset, batchSize);
+                List<ArticleExportDto> articles = reader.readBatch(offset, batchSize);
                 offset += articles.size();
                 batch = articles.iterator();
                 exhausted = articles.size() < batchSize;
@@ -69,7 +82,7 @@ public class HunterArticleJsonExportAdapter implements ArticleJsonExportPort {
         }
 
         @Override
-        public HunterArticleExportDto next() {
+        public ArticleExportDto next() {
             if (!hasNext()) {
                 throw new NoSuchElementException();
             }

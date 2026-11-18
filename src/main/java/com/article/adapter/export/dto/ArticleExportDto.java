@@ -1,4 +1,4 @@
-package com.article.adapter.export.hunter;
+package com.article.adapter.export.dto;
 
 import com.article.domain.NamedLink;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -14,7 +14,7 @@ import java.util.Map;
         "articleUrl", "title", "description", "publishedDate", "author", "authorLink", "menuPaths",
         "tags", "images", "videos", "affiliateDisclosure", "content", "footerTags", "relatedStories"
 })
-record HunterArticleExportDto(
+public record ArticleExportDto(
 
         String articleUrl,
 
@@ -48,7 +48,7 @@ record HunterArticleExportDto(
 
     @JsonInclude(JsonInclude.Include.ALWAYS)
     @JsonPropertyOrder({"caption", "originalImageUrl", "position"})
-    record Photo(
+    public record Photo(
 
             String caption,
 
@@ -58,7 +58,7 @@ record HunterArticleExportDto(
     ) {}
 
     @JsonPropertyOrder({"url", "position"})
-    record Video(
+    public record Video(
 
             String url,
 

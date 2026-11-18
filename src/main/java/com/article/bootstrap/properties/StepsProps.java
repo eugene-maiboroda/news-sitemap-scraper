@@ -10,7 +10,7 @@ public record StepsProps(
         AuthorStep extractAuthors,
         Step downloadImages,
         Step downloadVideos,
-        Step exportJson
+        ExportJsonStep exportJson
 ) {
 
     public enum ParseSource {
@@ -33,6 +33,15 @@ public record StepsProps(
     public record AuthorStep(
 
             boolean enabled
+    ) {}
+
+    public record ExportJsonStep(
+
+            boolean enabled,
+
+            int batchSize,
+
+            String fileName
     ) {}
 
     public record Step(
