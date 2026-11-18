@@ -11,6 +11,7 @@ public record Article(
         String url,
         LocalDate publishDate,
         String title,
+        String subtitles,
         String subTitle,
         String author,
         String authorLink,

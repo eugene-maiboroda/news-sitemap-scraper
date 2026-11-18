@@ -11,7 +11,7 @@ import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.ALWAYS)
 @JsonPropertyOrder({
-        "articleUrl", "title", "description", "publishedDate", "author", "authorLink", "menuPaths",
+        "articleUrl", "title", "subtitles", "description", "publishedDate", "author", "authorLink", "menuPaths",
         "tags", "images", "videos", "affiliateDisclosure", "content", "footerTags", "relatedStories"
 })
 public record ArticleExportDto(
@@ -19,6 +19,9 @@ public record ArticleExportDto(
         String articleUrl,
 
         String title,
+
+        @JsonInclude(JsonInclude.Include.NON_EMPTY)
+        String subtitles,
 
         String description,
 

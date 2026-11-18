@@ -25,7 +25,7 @@ import java.util.Objects;
 public class ArticleExportReader {
 
     private static final String ARTICLES_SQL = """
-            SELECT article.id, article.article_url, article.title, links.discovery_description,
+            SELECT article.id, article.article_url, article.title, article.subtitles, links.discovery_description,
                    article.published_date, article.author, article.author_link, links.menu_paths,
                    article.tags, article.affiliate_disclosure, article.content,
                    article.footer_tags, article.related_stories
@@ -89,6 +89,7 @@ public class ArticleExportReader {
                 row.getString("id"),
                 row.getString("article_url"),
                 row.getString("title"),
+                optionalText(row.getString("subtitles")),
                 optionalText(row.getString("discovery_description")),
                 row.getObject("published_date", LocalDate.class),
                 optionalText(row.getString("author")),
@@ -139,6 +140,8 @@ public class ArticleExportReader {
 
             String title,
 
+            String subtitles,
+
             String description,
 
             LocalDate publishedDate,
@@ -162,7 +165,7 @@ public class ArticleExportReader {
 
         private ArticleExportDto toDto(
                 List<ArticleExportDto.Photo> images, List<ArticleExportDto.Video> videos) {
-            return new ArticleExportDto(articleUrl, title, description, publishedDate, author, authorLink,
+            return new ArticleExportDto(articleUrl, title, subtitles, description, publishedDate, author, authorLink,
                     menuPaths, tags, images, videos, affiliateDisclosure, content, footerTags, relatedStories);
         }
     }

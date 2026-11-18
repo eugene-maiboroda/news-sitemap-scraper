@@ -76,6 +76,7 @@ public class AmericanRiflemanArticleParser implements ArticlePagePort {
 
         Document document = Jsoup.parse(html, url);
         String title = text(document.selectFirst("main .page-headline h1"));
+        Element subTitle = document.selectFirst("main .page-headline h1 + h2");
         Element scope = document.selectFirst("main .component.article-content");
         if (title == null || scope == null) {
             return ParseResult.error(url, "Missing article title or container");
@@ -104,6 +105,7 @@ public class AmericanRiflemanArticleParser implements ArticlePagePort {
                 .id(id)
                 .url(url)
                 .title(title)
+                .subtitles(text(subTitle))
                 .publishDate(date)
                 .author(text(author))
                 .authorLink(authorUrl.isBlank() ? null : authorUrl)

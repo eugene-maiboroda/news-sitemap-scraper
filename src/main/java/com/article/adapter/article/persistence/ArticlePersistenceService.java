@@ -67,12 +67,16 @@ public class ArticlePersistenceService implements ArticlePersistencePort, Parsed
 
     private static final String UPSERT_ARTICLE_SQL = """
             INSERT INTO articles (
-                id, article_url, title, published_date, author, author_link, content, raw_html,
+                id, article_url, title, subtitles, published_date, author, author_link, content, raw_html,
                 affiliate_disclosure, tags, footer_tags, related_stories, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, CURRENT_TIMESTAMP)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::jsonb, CURRENT_TIMESTAMP)
             ON CONFLICT (id) DO UPDATE SET
                 article_url = EXCLUDED.article_url,
                 title = EXCLUDED.title,
+                subtitles = CASE
+                    WHEN NULLIF(btrim(articles.subtitles), '') IS NULL THEN EXCLUDED.subtitles
+                    ELSE articles.subtitles
+                END,
                 published_date = EXCLUDED.published_date,
                 author = EXCLUDED.author,
                 author_link = EXCLUDED.author_link,
@@ -206,6 +210,7 @@ public class ArticlePersistenceService implements ArticlePersistencePort, Parsed
                 article.id(),
                 article.url(),
                 article.title(),
+                article.subtitles(),
                 article.publishDate(),
                 article.author(),
                 article.authorLink(),

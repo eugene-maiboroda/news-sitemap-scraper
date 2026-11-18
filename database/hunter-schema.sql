@@ -16,6 +16,7 @@ CREATE TABLE articles (
     id TEXT PRIMARY KEY,
     article_url TEXT NOT NULL UNIQUE,
     title TEXT NOT NULL,
+    subtitles TEXT,
     published_date DATE,
     author TEXT,
     author_link TEXT,
