@@ -13,10 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.NoSuchElementException;
 
 @Component
 @RequiredArgsConstructor
@@ -37,9 +35,8 @@ public class ArticleJsonExportAdapter implements ArticleJsonExportPort {
         }
 
         Path output = Path.of(storage.exportDir()).resolve(exportFileName());
-        Iterable<ArticleExportDto> articles = () -> new ArticleIterator(batchSize);
         try {
-            writer.export(output, "articles", articles);
+            writer.export(output, "articles", entryWriter -> writeArticles(batchSize, entryWriter));
         } catch (IOException e) {
             throw new UncheckedIOException("Could not write article export " + output, e);
         }
@@ -59,34 +56,18 @@ public class ArticleJsonExportAdapter implements ArticleJsonExportPort {
         return configuredName;
     }
 
-    private final class ArticleIterator implements Iterator<ArticleExportDto> {
-
-        private final int batchSize;
-        private Iterator<ArticleExportDto> batch = List.<ArticleExportDto>of().iterator();
-        private long offset;
-        private boolean exhausted;
-
-        private ArticleIterator(int batchSize) {
-            this.batchSize = batchSize;
-        }
-
-        @Override
-        public boolean hasNext() {
-            if (!batch.hasNext() && !exhausted) {
-                List<ArticleExportDto> articles = reader.readBatch(offset, batchSize);
-                offset += articles.size();
-                batch = articles.iterator();
-                exhausted = articles.size() < batchSize;
+    private void writeArticles(int batchSize, JsonExportAdapter.EntryWriter entryWriter) throws IOException {
+        long offset = 0;
+        while (true) {
+            List<ArticleExportDto> batch = reader.readBatch(offset, batchSize);
+            for (ArticleExportDto article : batch) {
+                entryWriter.write(article);
             }
-            return batch.hasNext();
-        }
 
-        @Override
-        public ArticleExportDto next() {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
+            if (batch.size() < batchSize) {
+                return;
             }
-            return batch.next();
+            offset += batch.size();
         }
     }
 }

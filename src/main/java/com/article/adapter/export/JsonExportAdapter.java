@@ -18,6 +18,14 @@ public class JsonExportAdapter {
     private final ObjectMapper objectMapper;
 
     public void export(Path output, String arrayName, Iterable<?> entries) throws IOException {
+        export(output, arrayName, writer -> {
+            for (Object entry : entries) {
+                writer.write(entry);
+            }
+        });
+    }
+
+    void export(Path output, String arrayName, Entries entries) throws IOException {
         Path target = output.toAbsolutePath();
         Path directory = target.getParent();
         Files.createDirectories(directory);
@@ -31,16 +39,25 @@ public class JsonExportAdapter {
         }
     }
 
-    private void writeEntries(Path output, String arrayName, Iterable<?> entries) throws IOException {
+    private void writeEntries(Path output, String arrayName, Entries entries) throws IOException {
         try (JsonGenerator generator = objectMapper.getFactory().createGenerator(output.toFile(), JsonEncoding.UTF8)) {
             generator.useDefaultPrettyPrinter();
             generator.writeStartObject();
             generator.writeArrayFieldStart(arrayName);
-            for (Object entry : entries) {
-                objectMapper.writeValue(generator, entry);
-            }
+            entries.writeTo(entry -> objectMapper.writeValue(generator, entry));
             generator.writeEndArray();
             generator.writeEndObject();
         }
+    }
+    @FunctionalInterface
+    interface Entries {
+
+        void writeTo(EntryWriter writer) throws IOException;
+    }
+
+    @FunctionalInterface
+    interface EntryWriter {
+
+        void write(Object entry) throws IOException;
     }
 }
