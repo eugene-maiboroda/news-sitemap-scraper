@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  si-postgres-nraila:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: nraila_articles
+      POSTGRES_USER: eyal
+      POSTGRES_PASSWORD: eyal_nraila
+    ports:
+      - "5443:5432"
+    volumes:
+      - si_article_nraila_pgdata:/var/lib/postgresql/data
+
+volumes:
+  si_article_nraila_pgdata:
