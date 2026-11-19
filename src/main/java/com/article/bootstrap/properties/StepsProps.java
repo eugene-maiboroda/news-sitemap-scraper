@@ -20,13 +20,22 @@ public record StepsProps(
         RAW_HTML
     }
 
+    public enum ArchiveOperation {
+
+        CAPTIONS,
+
+        MEDIA_CONTENT
+    }
+
     public record ParsePagesStep(
 
             boolean enabled,
 
             int batchSize,
 
-            @DefaultValue("HTTP") ParseSource source
+            @DefaultValue("HTTP") ParseSource source,
+
+            @DefaultValue("CAPTIONS") ArchiveOperation archiveOperation
     ) {
     }
 

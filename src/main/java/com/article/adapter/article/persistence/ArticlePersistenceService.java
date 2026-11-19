@@ -8,6 +8,8 @@ import com.article.domain.DiscoveredArticle;
 import com.article.domain.Image;
 import com.article.domain.NamedLink;
 import com.article.domain.ParseResult;
+import com.article.port.ArticlePagePort.ArchivedContent;
+import java.util.Objects;
 import com.article.domain.status.CrawlStatus;
 import com.article.port.IdGenerationPort;
 import com.article.port.persistence.ArticlePersistencePort;
@@ -197,6 +199,46 @@ public class ArticlePersistenceService implements ArticlePersistencePort, Parsed
                       WHERE other.article_id = i.article_id AND other.position = i.position AND other.id <> i.id
                   )
                 """, image.getCaption(), image.getArticleId(), image.getImageUrl(), image.getPosition());
+    }
+
+    @Override
+    public List<ArchivedArticle> findContentRebuildBatch(String afterId, int limit) {
+        return jdbcTemplate.query("""
+                SELECT id, article_url, raw_html FROM articles
+                WHERE id > ? ORDER BY id LIMIT ?
+                """, (row, index) -> new ArchivedArticle(row.getString("id"), row.getString("article_url"),
+                row.getString("raw_html")), afterId, limit);
+    }
+
+    @Override
+    @Transactional
+    public void updateArchivedContent(
+            ArchivedArticle article, ArchivedContent content) {
+        jdbcTemplate.queryForObject("SELECT id FROM article_links WHERE article_url = ? FOR UPDATE",
+                String.class, article.url());
+        String currentArchive = jdbcTemplate.queryForObject(
+                "SELECT raw_html FROM articles WHERE id = ? FOR UPDATE", String.class, article.id());
+        if (!Objects.equals(currentArchive, article.rawHtml())) {
+            throw new IllegalStateException("Article archive changed during rebuild: " + article.url());
+        }
+
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT count(*) FROM image WHERE article_id = ?", Integer.class, article.id());
+        if (count == null || count != content.images().size()) {
+            throw new IllegalStateException("Image count mismatch for " + article.url());
+        }
+        for (Image image : content.images()) {
+            int updated = jdbcTemplate.update("""
+                    UPDATE image SET image_url = ?
+                    WHERE article_id = ? AND position = ?
+                      AND split_part(split_part(image_url, '?', 1), '#', 1) =
+                          split_part(split_part(?, '?', 1), '#', 1)
+                    """, image.getImageUrl(), article.id(), image.getPosition(), image.getImageUrl());
+            if (updated != 1) {
+                throw new IllegalStateException("Ambiguous image match for " + article.url());
+            }
+        }
+        jdbcTemplate.update("UPDATE articles SET content = ? WHERE id = ?", content.content(), article.id());
     }
 
     private void upsertArticle(ParseResult.MenuArticleSuccess result) {

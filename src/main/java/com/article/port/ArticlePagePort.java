@@ -10,5 +10,16 @@ public interface ArticlePagePort {
 
     ParseResult parse(ArticleLink link);
 
+    default ArchivedContent parseArchivedContent(String articleId, String articleUrl, String rawHtml) {
+        throw new UnsupportedOperationException("Archive content rebuilding is not supported for this site");
+    }
+
+    record ArchivedContent(
+
+            String content,
+
+            List<Image> images
+    ) {}
+
     List<Image> parseArchivedImages(String articleId, String articleUrl, String rawHtml);
 }

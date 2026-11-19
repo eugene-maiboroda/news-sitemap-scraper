@@ -77,11 +77,11 @@ public class AmericanHunterArticleParser implements ArticlePagePort {
         }
 
         String id = ArticleIds.fromUrl(url);
-        String bodyHtml = scope.select(".article-rte").html();
+        String bodyHtml = articleContent(scope);
         List<Image> images = images(scope, id);
         List<String> videoUrls = videoUrls(scope);
 
-        if (bodyHtml.isBlank() && images.isEmpty() && videoUrls.isEmpty()) {
+        if (scope.select(".article-rte").html().isBlank() && images.isEmpty() && videoUrls.isEmpty()) {
             return ParseResult.error(url, "Missing article body and media");
         }
 
@@ -125,6 +125,36 @@ public class AmericanHunterArticleParser implements ArticlePagePort {
         );
     }
 
+    private static String articleContent(Element scope) {
+        Element content = scope.clone();
+        for (Element sidebar : content.select(".row > .col-lg-4.col-xl-3")) {
+            if (sidebar.siblingElements().stream()
+                    .anyMatch(column -> column.hasClass("col-lg-8") && column.hasClass("col-xl-9"))) {
+                sidebar.remove();
+            }
+        }
+        return content.html();
+    }
+
+    @Override
+    public ArchivedContent parseArchivedContent(String articleId, String articleUrl, String rawHtml) {
+        Element scope = Jsoup.parse(rawHtml, articleUrl).selectFirst(".component.article-content");
+        if (scope == null || scope.selectFirst(".article-rte, .video-responsive, figure") == null) {
+            throw new IllegalArgumentException("Missing archived article content for " + articleUrl);
+        }
+        return new ArchivedContent(articleContent(scope), images(scope, articleId));
+    }
+
+    private static String originalImageUrl(String url) {
+        URI uri = URI.create(url);
+        String host = uri.getHost();
+        if (("www.americanhunter.org".equalsIgnoreCase(host) || "americanhunter.org".equalsIgnoreCase(host))
+                && uri.getPath().startsWith("/media/")) {
+            return url.split("[?#]", 2)[0];
+        }
+        return url;
+    }
+
     private static List<String> videoUrls(Element scope) {
         return scope.select(
                         ".video-responsive iframe, .article-rte iframe, .article-rte video, .video-responsive video")
@@ -138,10 +168,14 @@ public class AmericanHunterArticleParser implements ArticlePagePort {
     @Override
     public List<Image> parseArchivedImages(String articleId, String articleUrl, String rawHtml) {
         Element scope = Jsoup.parse(rawHtml, articleUrl).selectFirst(".component.article-content");
-        return scope == null ? List.of() : images(scope, articleId);
+        return scope == null ? List.of() : images(scope, articleId, false);
     }
 
     private static List<Image> images(Element scope, String articleId) {
+        return images(scope, articleId, true);
+    }
+
+    private static List<Image> images(Element scope, String articleId, boolean useOriginalUrl) {
         List<Image> images = new ArrayList<>();
         for (Element image : scope.select(".col-xl-9 > figure img, .article-rte img")) {
             String url = mediaUrl(image);
@@ -150,7 +184,7 @@ public class AmericanHunterArticleParser implements ArticlePagePort {
             }
             images.add(Image.builder()
                     .articleId(articleId)
-                    .imageUrl(url)
+                    .imageUrl(useOriginalUrl ? originalImageUrl(url) : url)
                     .position(images.size())
                     .caption(imageCaption(image))
                     .build());

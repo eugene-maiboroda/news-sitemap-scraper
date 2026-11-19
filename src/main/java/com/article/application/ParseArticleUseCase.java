@@ -43,6 +43,32 @@ public class ParseArticleUseCase {
         log.info("No more links to parse");
     }
 
+    public void rebuildArchivedContent() {
+        int limit = Math.clamp(stepsProps.parsePages().batchSize(), 1, MAX_ARCHIVE_BATCH_SIZE);
+        String afterId = "";
+        long updated = 0;
+        long failed = 0;
+        List<ArchivedArticle> batch;
+        while (!(batch = parsedArticlePersistence.findContentRebuildBatch(afterId, limit)).isEmpty()) {
+            for (ArchivedArticle article : batch) {
+                try {
+                    if (article.rawHtml() == null || article.rawHtml().isBlank()) {
+                        throw new IllegalArgumentException("Missing raw_html");
+                    }
+                    ArticlePagePort.ArchivedContent content = articlePagePort.parseArchivedContent(
+                            article.id(), article.url(), article.rawHtml());
+                    parsedArticlePersistence.updateArchivedContent(article, content);
+                    updated++;
+                } catch (RuntimeException e) {
+                    failed++;
+                    log.error("[RAW_HTML] Content rebuild failed | articleUrl={}", article.url(), e);
+                }
+            }
+            afterId = batch.getLast().id();
+            log.info("[RAW_HTML] Content rebuild | updated={} failed={}", updated, failed);
+        }
+    }
+
     public void backfillCaptions() {
         int limit = Math.clamp(stepsProps.parsePages().batchSize(), 1, MAX_ARCHIVE_BATCH_SIZE);
         LongAdder updated = new LongAdder();

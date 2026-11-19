@@ -27,7 +27,11 @@ public class ArticleCollectorService implements ArticleCollectionUseCase {
     public void run() {
         try {
             if (steps.parsePages().enabled() && steps.parsePages().source() == StepsProps.ParseSource.RAW_HTML) {
-                parseArticleUseCase.backfillCaptions();
+                if (steps.parsePages().archiveOperation() == StepsProps.ArchiveOperation.MEDIA_CONTENT) {
+                    parseArticleUseCase.rebuildArchivedContent();
+                } else {
+                    parseArticleUseCase.backfillCaptions();
+                }
                 return;
             }
 

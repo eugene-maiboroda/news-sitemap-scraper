@@ -118,3 +118,21 @@ psql -h localhost -p 5442 -U eyal -d rifleman_articles \
 6. **Погодь клієнтський JSON.** Для спільної схеми БД і JSON використай чинний `ArticleJsonExportAdapter` і за потреби задай `steps.export-json.file-name`. Якщо потрібен окремий формат, підключи відповідну реалізацію `ArticleJsonExportPort`. Запусти тільки експорт і звір кількість записів, унікальні URL, шляхи й медіа з БД.
 
 Для передачі задачі в ChatGPT дай цей гайд разом із кодом згаданих портів і чинних адаптерів, картою меню та HTML-зразками. Початковий результат — перевірена карта `Section` і Discovery для одного розділу. Розширюй збір після перевірки кількох розділів і повторного запуску.
+
+## Оновлення content і URL фото Hunter з архіву
+
+Для вже зібраних статей Hunter вибери підключення до БД Hunter і такі параметри:
+
+```properties
+collector.site=AMERICAN_HUNTER
+steps.parse-pages.enabled=true
+steps.parse-pages.source=RAW_HTML
+steps.parse-pages.archive-operation=MEDIA_CONTENT
+steps.parse-pages.batch-size=100
+steps.discover-links.enabled=false
+steps.export-json.enabled=false
+```
+
+Операція читає збережений raw_html. Оновлює content з усього article-content без правої рекламної колонки та прибирає query/fragment з окремих URL фото Hunter у /media/. Фото всередині HTML зберігають початкові атрибути. ID, caption, метадані й інші поля БД зберігаються. Помилки зіставлення фото або відсутнього архіву логуються за URL, зміни такої статті відкочуються. Перевір підсумкові updated/failed.
+
+Для чинного дозаповнення підписів використовуй archive-operation=CAPTIONS (типове значення). MEDIA_CONTENT реалізовано для Hunter. Режим RAW_HTML завершує pipeline після архівної операції. Після її перевірки запусти експорт окремо з parse-pages.enabled=false та export-json.enabled=true.
