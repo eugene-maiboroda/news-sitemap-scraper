@@ -2,6 +2,7 @@ package com.article.adapter.article;
 
 import com.article.adapter.http.HttpContentLoader;
 import com.article.adapter.shared.ArticleIds;
+import com.article.adapter.shared.MediaUrls;
 import com.article.domain.Article;
 import com.article.domain.ArticleLink;
 import com.article.domain.Image;
@@ -133,6 +134,17 @@ public class AmericanHunterArticleParser implements ArticlePagePort {
                 sidebar.remove();
             }
         }
+        Element mainImage = content.selectFirst(".col-xl-9 > figure img");
+        if (mainImage != null) {
+            String url = mediaUrl(mainImage);
+            if (!url.isBlank()) {
+                mainImage.attr("src", originalImageUrl(url));
+                mainImage.removeAttr("data-src");
+                mainImage.removeAttr("srcset");
+                mainImage.removeAttr("data-srcset");
+                mainImage.removeClass("lazyload");
+            }
+        }
         return content.html();
     }
 
@@ -146,11 +158,12 @@ public class AmericanHunterArticleParser implements ArticlePagePort {
     }
 
     private static String originalImageUrl(String url) {
-        URI uri = URI.create(url);
+        String plainUrl = MediaUrls.withoutQueryOrFragment(url);
+        URI uri = URI.create(plainUrl);
         String host = uri.getHost();
         if (("www.americanhunter.org".equalsIgnoreCase(host) || "americanhunter.org".equalsIgnoreCase(host))
                 && uri.getPath().startsWith("/media/")) {
-            return url.split("[?#]", 2)[0];
+            return plainUrl;
         }
         return url;
     }

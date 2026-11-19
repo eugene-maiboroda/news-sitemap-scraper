@@ -2,6 +2,7 @@ package com.article.adapter.article;
 
 import com.article.adapter.http.HttpContentLoader;
 import com.article.adapter.shared.ArticleIds;
+import com.article.adapter.shared.MediaUrls;
 import com.article.domain.Article;
 import com.article.domain.ArticleLink;
 import com.article.domain.Image;
@@ -63,12 +64,6 @@ public class AmericanRiflemanArticleParser implements ArticlePagePort {
         return parseHtml(url, html);
     }
 
-    @Override
-    public List<Image> parseArchivedImages(String articleId, String articleUrl, String rawHtml) {
-        Element scope = Jsoup.parse(rawHtml, articleUrl).selectFirst(".component.article-content");
-        return scope == null ? List.of() : images(scope, articleId);
-    }
-
     ParseResult parseHtml(String url, String html) {
         if (html == null || html.isBlank()) {
             return ParseResult.error(url, "Empty article response");
@@ -83,11 +78,11 @@ public class AmericanRiflemanArticleParser implements ArticlePagePort {
         }
 
         String id = ArticleIds.fromUrl(url);
-        String bodyHtml = scope.select(".article-rte").html();
+        String bodyHtml = articleContent(scope);
         List<Image> images = images(scope, id);
         List<String> videoUrls = videoUrls(scope);
 
-        if (bodyHtml.isBlank() && images.isEmpty() && videoUrls.isEmpty()) {
+        if (scope.select(".article-rte").html().isBlank() && images.isEmpty() && videoUrls.isEmpty()) {
             return ParseResult.error(url, "Missing article body and media");
         }
 
@@ -131,6 +126,48 @@ public class AmericanRiflemanArticleParser implements ArticlePagePort {
         );
     }
 
+    private static String articleContent(Element scope) {
+        Element content = scope.clone();
+        for (Element sidebar : content.select(".row > .col-lg-4.col-xl-3")) {
+            if (sidebar.siblingElements().stream()
+                    .anyMatch(column -> column.hasClass("col-lg-8") && column.hasClass("col-xl-9"))) {
+                sidebar.remove();
+            }
+        }
+        Element mainImage = content.selectFirst(".col-xl-9 > figure img");
+        if (mainImage != null) {
+            String url = mediaUrl(mainImage);
+            if (!url.isBlank()) {
+                mainImage.attr("src", originalImageUrl(url));
+                mainImage.removeAttr("data-src");
+                mainImage.removeAttr("srcset");
+                mainImage.removeAttr("data-srcset");
+                mainImage.removeClass("lazyload");
+            }
+        }
+        return content.html();
+    }
+
+    @Override
+    public ArchivedContent parseArchivedContent(String articleId, String articleUrl, String rawHtml) {
+        Element scope = Jsoup.parse(rawHtml, articleUrl).selectFirst(".component.article-content");
+        if (scope == null || scope.selectFirst(".article-rte, .video-responsive, figure") == null) {
+            throw new IllegalArgumentException("Missing archived article content for " + articleUrl);
+        }
+        return new ArchivedContent(articleContent(scope), images(scope, articleId));
+    }
+
+    private static String originalImageUrl(String url) {
+        String plainUrl = MediaUrls.withoutQueryOrFragment(url);
+        URI uri = URI.create(plainUrl);
+        String host = uri.getHost();
+        if (("www.americanrifleman.org".equalsIgnoreCase(host) || "americanrifleman.org".equalsIgnoreCase(host))
+                && uri.getPath().startsWith("/media/")) {
+            return plainUrl;
+        }
+        return url;
+    }
+
     private static List<String> videoUrls(Element scope) {
         return scope.select(
                         ".video-responsive iframe, .article-rte iframe, .article-rte video, .video-responsive video")
@@ -141,7 +178,17 @@ public class AmericanRiflemanArticleParser implements ArticlePagePort {
                 .toList();
     }
 
+    @Override
+    public List<Image> parseArchivedImages(String articleId, String articleUrl, String rawHtml) {
+        Element scope = Jsoup.parse(rawHtml, articleUrl).selectFirst(".component.article-content");
+        return scope == null ? List.of() : images(scope, articleId, false);
+    }
+
     private static List<Image> images(Element scope, String articleId) {
+        return images(scope, articleId, true);
+    }
+
+    private static List<Image> images(Element scope, String articleId, boolean useOriginalUrl) {
         List<Image> images = new ArrayList<>();
         for (Element image : scope.select(".col-xl-9 > figure img, .article-rte img")) {
             String url = mediaUrl(image);
@@ -150,7 +197,7 @@ public class AmericanRiflemanArticleParser implements ArticlePagePort {
             }
             images.add(Image.builder()
                     .articleId(articleId)
-                    .imageUrl(url)
+                    .imageUrl(useOriginalUrl ? originalImageUrl(url) : url)
                     .position(images.size())
                     .caption(imageCaption(image))
                     .build());

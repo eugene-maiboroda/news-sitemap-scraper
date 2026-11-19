@@ -2,6 +2,21 @@
 
 Pipeline знаходить URL статей, парсить сторінки, зберігає дані в PostgreSQL і формує JSON для імпортера. Реалізований сайт — American Hunter. Java 21, Maven, Spring Boot, PostgreSQL 15 у наявному Docker Compose.
 
+## Профілі Hunter і Rifleman
+
+Спільні налаштування лежать в application.properties. application-hunter.properties вибирає AMERICAN_HUNTER та hunter_articles на порту 5441, application-rifleman.properties — AMERICAN_RIFLEMAN та rifleman_articles на порту 5442. Типовий профіль без явного вибору — hunter. Усі кроки за замовчуванням вимкнені.
+
+Запусти відповідний PostgreSQL вручну в Docker Desktop. Логін і пароль підключення задані безпосередньо у відповідному application-hunter.properties або application-rifleman.properties. Профілі використовують чинного користувача eyal і попередні storage-директорії. В IntelliJ поле Active profiles встанови в hunter або rifleman, або передай програмний аргумент --spring.profiles.active=hunter.
+
+Через Maven:
+
+```sh
+mvn spring-boot:run -Dspring-boot.run.profiles=hunter
+mvn spring-boot:run -Dspring-boot.run.profiles=rifleman
+```
+
+Для експорту додай до обраного запуску аргумент --steps.export-json.enabled=true. У Maven його можна передати через -Dspring-boot.run.arguments="--steps.export-json.enabled=true". Параметри кроків задаються у спільному application.properties або аргументах конкретного запуску.
+
 ## Перший локальний запуск
 
 1. Перевір `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` і порт у [docker-compose.yml](docker/docker-compose.yml). Для Hunter це сервіс `si-postgres-hunter`, БД `hunter_articles` і порт хоста `5441`. Запусти `docker compose -f docker/docker-compose.yml up -d si-postgres-hunter`. Якщо використовуєш свій PostgreSQL, створи порожню БД з вибраною назвою під своїм користувачем.
@@ -135,4 +150,10 @@ steps.export-json.enabled=false
 
 Операція читає збережений raw_html. Оновлює content з усього article-content без правої рекламної колонки та прибирає query/fragment з окремих URL фото Hunter у /media/. Фото всередині HTML зберігають початкові атрибути. ID, caption, метадані й інші поля БД зберігаються. Помилки зіставлення фото або відсутнього архіву логуються за URL, зміни такої статті відкочуються. Перевір підсумкові updated/failed.
 
-Для чинного дозаповнення підписів використовуй archive-operation=CAPTIONS (типове значення). MEDIA_CONTENT реалізовано для Hunter. Режим RAW_HTML завершує pipeline після архівної операції. Після її перевірки запусти експорт окремо з parse-pages.enabled=false та export-json.enabled=true.
+Для чинного дозаповнення підписів використовуй archive-operation=CAPTIONS (типове значення). MEDIA_CONTENT реалізовано для Hunter і Rifleman. Режим RAW_HTML завершує pipeline після архівної операції. Після її перевірки запусти експорт окремо з parse-pages.enabled=false та export-json.enabled=true.
+
+## Оновлення медіа American Rifleman
+
+Профіль rifleman налаштований на RAW_HTML / MEDIA_CONTENT з batch-size=100 та вимкненими іншими кроками. Вибери його в Active profiles і запусти Main для оновлення content та окремих URL фото з БД rifleman_articles. Дія виконується за тим самим правилом, що для Hunter: весь article-content без правої колонки, головне фото із справжнім src, окремі власні /media/ URL без query і fragment, плеєри на початкових місцях.
+
+Після перевірки updated/failed у application-rifleman.properties встанови steps.parse-pages.enabled=false і steps.export-json.enabled=true та запусти ще раз. Результат — american-rifleman-articles.json у storage.export-dir. Щоб повторно завантажувати сторінки з сайту, вибери HTTP і підготуй чергу NEW.

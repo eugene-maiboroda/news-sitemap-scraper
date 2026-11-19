@@ -1,5 +1,6 @@
 package com.article.application;
 
+import com.article.bootstrap.properties.CollectorProps;
 import com.article.bootstrap.properties.StepsProps;
 import com.article.port.ArticleCollectionUseCase;
 import com.article.port.ArticleJsonExportPort;
@@ -20,11 +21,13 @@ public class ArticleCollectorService implements ArticleCollectionUseCase {
     private final ImagesDownloaderUseCase imagesDownloaderUseCase;
     private final VideosDownloadUseCase videosDownloadUseCase;
     private final StepsProps steps;
+    private final CollectorProps collector;
     private final ObjectProvider<StateDirectoryExportPort> stateDirectoryExportProvider;
     private final ObjectProvider<ArticleJsonExportPort> articleJsonExportProvider;
 
     @Override
     public void run() {
+        log.info("Article collector started | site={}", collector.site());
         try {
             if (steps.parsePages().enabled() && steps.parsePages().source() == StepsProps.ParseSource.RAW_HTML) {
                 if (steps.parsePages().archiveOperation() == StepsProps.ArchiveOperation.MEDIA_CONTENT) {
