@@ -1,9 +1,7 @@
 package com.article.adapter.discovery;
 
-import com.article.adapter.http.HttpContentLoader;
 import com.article.port.MenuDiscoveryPort;
 import lombok.RequiredArgsConstructor;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -21,18 +19,24 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
+
+import static com.article.adapter.discovery.NrailaSectionCollector.BASE_URL;
+import static com.article.adapter.discovery.NrailaSectionCollector.STATES_PATH;
+import static com.article.adapter.discovery.NrailaSectionCollector.ALERTS_PATH;
+import static com.article.adapter.discovery.NrailaSectionCollector.ISSUE_PATH;
+import static com.article.adapter.discovery.NrailaSectionCollector.query;
+import static com.article.adapter.discovery.NrailaSectionCollector.linkUrl;
+import static com.article.adapter.discovery.NrailaSectionCollector.nextPage;
+import static com.article.adapter.discovery.NrailaSectionCollector.validatePage;
+import static com.article.adapter.discovery.NrailaSectionCollector.validateNext;
+import static com.article.adapter.discovery.NrailaSectionCollector.isSiteUrl;
 
 @Component
 @ConditionalOnProperty(name = "collector.site", havingValue = "NRAILA")
 @RequiredArgsConstructor
 public class NrailaDiscoveryAdapter implements MenuDiscoveryPort {
 
-    private static final String BASE_URL = "https://www.nraila.org";
-    private static final String STATES_PATH = "/gun-laws/state-gun-laws/";
-    private static final String ALERTS_PATH = "/grassroots-alerts/";
-    private static final String ISSUE_PATH = ALERTS_PATH + "grassroots-alert/";
     private static final int PAGE_LIMIT = 50;
     private static final DateTimeFormatter FILTER_DATE = DateTimeFormatter.ofPattern("uuuuMMdd");
     private static final DateTimeFormatter CARD_DATE = DateTimeFormatter.ofPattern("EEEE, MMMM d, uuuu", Locale.US);
@@ -103,26 +107,18 @@ public class NrailaDiscoveryAdapter implements MenuDiscoveryPort {
                     "Become an NRA-ILA Campaign Field Rep Today!")
     );
 
-    private final HttpContentLoader httpContentLoader;
-    private final Map<String, String> catalogErrors = new LinkedHashMap<>();
+    private final NrailaSectionCollector sectionCollector;
 
     @Override
     public List<Section> sections() {
-        catalogErrors.clear();
-        Map<String, Section> sections = new LinkedHashMap<>();
-        for (Section section : SECTIONS) {
-            sections.put(section.path(), section);
-            if (STATES_PATH.equals(section.path()) || ALERTS_PATH.equals(section.path())) {
-                collectSections(section, sections);
-            }
-        }
-        return List.copyOf(sections.values());
+        return sectionCollector.collect(SECTIONS);
     }
 
     @Override
     public SectionResult discover(Section section) {
-        if (catalogErrors.containsKey(section.path())) {
-            return new SectionResult(List.of(), catalogErrors.get(section.path()));
+        String catalogError = sectionCollector.error(section);
+        if (catalogError != null) {
+            return new SectionResult(List.of(), catalogError);
         }
         if (!section.collectCards()) {
             return new SectionResult(List.of(), null);
@@ -140,52 +136,6 @@ public class NrailaDiscoveryAdapter implements MenuDiscoveryPort {
         return new SectionResult(List.copyOf(cards.values()), errors.isEmpty() ? null : String.join("; ", errors));
     }
 
-    private void collectSections(Section catalog, Map<String, Section> sections) {
-        URI page = URI.create(BASE_URL + catalog.path());
-        Set<URI> visited = new HashSet<>();
-        Set<Set<String>> pageUrls = new HashSet<>();
-        try {
-            while (page != null) {
-                validatePage(page, catalog);
-                if (!visited.add(page)) {
-                    throw new IllegalStateException("Repeated catalog URL " + page);
-                }
-                Document document = loadDocument(page);
-                Map<String, Card> entries = readCards(document);
-                if (!entries.isEmpty() && !pageUrls.add(Set.copyOf(entries.keySet()))) {
-                    throw new IllegalStateException("Repeated catalog entries " + page);
-                }
-                for (Card entry : entries.values()) {
-                    URI url = URI.create(entry.articleUrl());
-                    boolean state = STATES_PATH.equals(catalog.path());
-                    boolean valid = isSiteUrl(url) && (state
-                            ? url.getPath().startsWith(STATES_PATH) && !url.getPath().equals(STATES_PATH)
-                            : ISSUE_PATH.equals(url.getPath()) && query(url).getFirst("id") != null);
-                    if (!valid) {
-                        throw new IllegalStateException("Unexpected catalog entry " + url);
-                    }
-                    String name = state ? entry.title().replaceFirst(" Gun Laws$", "") : entry.title();
-                    List<String> hierarchy = new ArrayList<>(catalog.hierarchies().getFirst());
-                    hierarchy.add(name);
-                    String path = url.getRawPath();
-                    if (url.getRawQuery() != null) {
-                        path += "?" + url.getRawQuery();
-                    }
-                    sections.putIfAbsent(path, new Section(path, List.of(List.copyOf(hierarchy)), true));
-                }
-                URI next = nextPage(document);
-                if (entries.isEmpty() && (next != null || visited.size() == 1)) {
-                    throw new IllegalStateException("Empty catalog without confirmed end " + page);
-                }
-                validateNext(page, next, catalog);
-                page = next;
-            }
-        } catch (RuntimeException e) {
-            catalogErrors.put(catalog.path(), page + ": " + e.getMessage());
-            sections.put(catalog.path(), new Section(catalog.path(), catalog.hierarchies(), true));
-        }
-    }
-
     private void collectInterval(Section section, LocalDate start, LocalDate end,
                                  Map<String, Card> cards, List<String> errors) {
         URI page = intervalPage(URI.create(BASE_URL + section.path()), start, end);
@@ -198,7 +148,7 @@ public class NrailaDiscoveryAdapter implements MenuDiscoveryPort {
                 if (!visited.add(page)) {
                     throw new IllegalStateException("Repeated listing URL");
                 }
-                Document document = loadDocument(page);
+                Document document = sectionCollector.loadDocument(page);
                 Map<String, Card> entries = readCards(document);
                 validateDates(document, start, end);
                 if (!entries.isEmpty() && !pageUrls.add(Set.copyOf(entries.keySet()))) {
@@ -242,7 +192,7 @@ public class NrailaDiscoveryAdapter implements MenuDiscoveryPort {
                 if (!visited.add(page)) {
                     throw new IllegalStateException("Repeated issue URL");
                 }
-                Document document = loadDocument(page);
+                Document document = sectionCollector.loadDocument(page);
                 Element content = document.selectFirst(".article-content");
                 if (content == null || content.text().isBlank()) {
                     throw new IllegalStateException("Missing issue content");
@@ -304,14 +254,6 @@ public class NrailaDiscoveryAdapter implements MenuDiscoveryPort {
         return false;
     }
 
-    private Document loadDocument(URI page) {
-        String html = httpContentLoader.loadText(page.toASCIIString());
-        if (html == null || html.isBlank()) {
-            throw new IllegalStateException("Empty HTML response " + page);
-        }
-        return Jsoup.parse(html, page.toString());
-    }
-
     private static Map<String, Card> readCards(Document document) {
         Element listing = document.selectFirst(".news-items");
         if (listing == null) {
@@ -343,11 +285,6 @@ public class NrailaDiscoveryAdapter implements MenuDiscoveryPort {
         }
     }
 
-    private static URI nextPage(Document document) {
-        Element next = document.selectFirst(".page-nav a[href]:has(.page-nav-next)");
-        return next == null ? null : linkUrl(next);
-    }
-
     private static URI intervalPage(URI uri, LocalDate start, LocalDate end) {
         for (String name : List.of("startDate", "endDate")) {
             String expected = FILTER_DATE.format(name.equals("startDate") ? start : end);
@@ -361,61 +298,6 @@ public class NrailaDiscoveryAdapter implements MenuDiscoveryPort {
                 .replaceQueryParam("endDate", FILTER_DATE.format(end))
                 .build(true)
                 .toUri();
-    }
-
-    private static MultiValueMap<String, String> query(URI uri) {
-        return UriComponentsBuilder.fromUri(uri).build(true).getQueryParams();
-    }
-
-    private static URI linkUrl(Element link) {
-        try {
-            URI uri = URI.create(link.absUrl("href")).normalize();
-            if (!("https".equalsIgnoreCase(uri.getScheme()) || "http".equalsIgnoreCase(uri.getScheme()))
-                    || uri.getHost() == null || uri.getUserInfo() != null) {
-                throw new IllegalArgumentException("Not an HTTP link");
-            }
-            String address = uri.toASCIIString();
-            int fragment = address.indexOf('#');
-            if (fragment >= 0) {
-                address = address.substring(0, fragment);
-            }
-            if (isSiteUrl(uri)) {
-                address = BASE_URL + uri.getRawPath();
-                if (uri.getRawQuery() != null) {
-                    address += "?" + uri.getRawQuery();
-                }
-            }
-            return URI.create(address);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalStateException("Invalid link " + link.attr("href"), e);
-        }
-    }
-
-    private static void validatePage(URI page, Section section) {
-        URI source = URI.create(BASE_URL + section.path());
-        if (!isSiteUrl(page) || !source.getRawPath().equals(page.getRawPath())
-                || !Objects.equals(query(source).getFirst("id"), query(page).getFirst("id"))) {
-            throw new IllegalStateException("Unexpected page URL " + page);
-        }
-    }
-
-    private static void validateNext(URI current, URI next, Section section) {
-        if (next == null) {
-            return;
-        }
-        validatePage(next, section);
-        MultiValueMap<String, String> filters = query(current);
-        for (String name : filters.keySet()) {
-            if (!name.equals("page") && !Objects.equals(filters.get(name), query(next).get(name))) {
-                throw new IllegalStateException("Next changed filter " + name + ": " + next);
-            }
-        }
-    }
-
-    private static boolean isSiteUrl(URI uri) {
-        return ("https".equalsIgnoreCase(uri.getScheme()) || "http".equalsIgnoreCase(uri.getScheme()))
-                && ("www.nraila.org".equalsIgnoreCase(uri.getHost()) || "nraila.org".equalsIgnoreCase(uri.getHost()))
-                && uri.getPort() == -1 && uri.getUserInfo() == null;
     }
 
     private static String sectionTitle(Section section) {
