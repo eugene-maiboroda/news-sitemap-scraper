@@ -4,6 +4,7 @@ import com.article.bootstrap.properties.CollectorProps;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
@@ -25,14 +26,14 @@ public class AppConfig {
     }
 
     @Bean
-    RestClient restClient() {
+    RestClient restClient(@Value("${http.read-timeout:60s}") Duration readTimeout) {
         HttpClient httpClient = HttpClient.newBuilder()
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
 
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(httpClient);
 
-        factory.setReadTimeout(Duration.ofSeconds(30));
+        factory.setReadTimeout(readTimeout);
         return RestClient.builder()
                 .requestFactory(factory)
                 .build();
