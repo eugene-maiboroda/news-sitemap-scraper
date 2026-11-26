@@ -3,6 +3,9 @@ package com.article.adapter.article.persistence;
 import com.article.adapter.article.mapper.ArticleMapper;
 import com.article.adapter.article.persistence.entity.CrawlStatus;
 import com.article.adapter.article.persistence.entity.LinkArticleEntity;
+import com.article.bootstrap.properties.CollectorProps;
+import com.article.bootstrap.properties.ExportProps;
+import com.article.adapter.article.persistence.entity.ArticleEntity;
 import com.article.domain.article.Article;
 import com.article.domain.article.ArticleLink;
 import com.article.domain.article.ArticleMetadata;
@@ -26,8 +29,8 @@ import java.util.Map;
 public class ArticlePersistenceService implements ArticlePersistencePort {
 
     private static final String BULK_INSERT_SQL = """
-            INSERT INTO article_links (id, article_url, article_date, status)
-            VALUES (?, ?, ?, 'NEW')
+            INSERT INTO article_links (id, article_url, article_date, status, collection_batch_id)
+            VALUES (?, ?, ?, 'NEW', ?)
             ON CONFLICT (article_url) DO NOTHING
             """;
 
@@ -36,6 +39,8 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
     private final ArticleMapper articleMapper;
     private final JdbcTemplate jdbcTemplate;
     private final IdGenerationPort idGenerationPort;
+    private final CollectorProps collectorProps;
+    private final ExportProps exportProps;
 
     @Override
     @Transactional
@@ -43,11 +48,17 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
         if (links.isEmpty()) {
             return;
         }
+        String collectionBatchId = collectorProps.collectionBatchId();
+        if (collectionBatchId == null || collectionBatchId.isBlank()) {
+            throw new IllegalArgumentException("Set collector.collection-batch-id before discovering new links");
+        }
+
         long start = System.currentTimeMillis();
         jdbcTemplate.batchUpdate(BULK_INSERT_SQL, links, links.size(), (ps, link) -> {
             ps.setString(1, idGenerationPort.generateId());
             ps.setString(2, link.articleUrl());
             ps.setObject(3, link.articleDate());
+            ps.setString(4, collectionBatchId);
         });
         log.info("Insert took {} ms", System.currentTimeMillis() - start);
     }
@@ -73,10 +84,15 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
 
     @Override
     public List<ArticleWithMetadata> findArticlesForExport(int page, int pageSize) {
-        return articleMapper.toArticlesWithMetadata(
-                articleRepository.findAllByOrderByPublishDateAscIdAsc(
-                        PageRequest.of(page, pageSize)
-                ));
+        PageRequest pageRequest = PageRequest.of(page, pageSize);
+        String collectionBatchId = exportProps.collectionBatchId();
+        List<ArticleEntity> articles;
+        if (collectionBatchId == null) {
+            articles = articleRepository.findAllByOrderByPublishDateAscIdAsc(pageRequest);
+        } else {
+            articles = articleRepository.findByCollectionBatchId(collectionBatchId, pageRequest);
+        }
+        return articleMapper.toArticlesWithMetadata(articles);
     }
 
     @Override

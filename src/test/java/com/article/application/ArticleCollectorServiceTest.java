@@ -20,7 +20,7 @@ class ArticleCollectorServiceTest {
         DownloadVideosUseCase downloadVideos = mock(DownloadVideosUseCase.class);
         AuthorUseCase authors = mock(AuthorUseCase.class);
         ExportArticlesUseCase exportArticles = mock(ExportArticlesUseCase.class);
-        CollectorProps collector = new CollectorProps(4, 0, List.of("https://example.com/sitemap.xml"));
+        CollectorProps collector = new CollectorProps(4, 0, List.of("https://example.com/sitemap.xml"), null);
         StepsProps steps = new StepsProps(
                 enabled(100),
                 enabled(200),

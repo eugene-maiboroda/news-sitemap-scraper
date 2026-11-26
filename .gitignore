@@ -142,3 +142,9 @@ failsafe-reports/
 coverage/
 jacoco.exec
 /site/
+
+/docs/
+AGENTS.md
+
+# Local audit captures and temporary verification artifacts
+/work/
