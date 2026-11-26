@@ -84,9 +84,24 @@ Topics/tags збираються разом під час звичайного �
 
 У цій гілці немає потреби задавати collector.site, collector.discovery-source чи профіль nrlila. Усі batch-size увімкнених Step мають бути >0; export-authors і extract-connatix — ToggleStep без batch-size. Batch-size обмежує розмір пакета, а не загальну кількість статей: цикл продовжується до завершення черги.
 
+## Обов’язково: власні директорії на комп’ютері колеги
+
+До будь-якого запуску змінити **чотири** ключі `storage.*` у `src/main/resources/application.properties`. Наявні абсолютні шляхи `/Users/eugene/...` належать комп’ютеру попереднього виконавця й не повинні залишатися для роботи колеги. Вказати власні доступні для запису директорії; приклад нижче використовує `/absolute/path` як позначення, яке потрібно замінити своїм реальним шляхом:
+
+```properties
+storage.export-dir=/absolute/path/nypost/export
+storage.images-dir=/absolute/path/nypost/images
+storage.videos-dir=/absolute/path/nypost/videos
+storage.avatars-dir=/absolute/path/nypost/avatars
+```
+
+`export-dir` — JSON статей і авторів; `images-dir` — скачані фото; `videos-dir` — скачані відео; `avatars-dir` — аватари авторів. Для кожної поставки/режиму експорту обирати окрему output-директорію. Переконатися, що на диску достатньо місця.
+
+Дамп БД не містить самих медіафайлів. Зміна цих властивостей не переносить старі файли й не переписує `local_file_path` або статуси `DOWNLOADED` у відновленій БД. Якщо потрібні вже скачані матеріали, передати їх окремо й узгодити розташування; не очікувати, що вони автоматично скачаються повторно після зміни директорії.
+
 ## Перед першим запуском із batch
 
-1. Перевірити git branch --show-current: feat/nypost-refactoring. Не перемикати брудне робоче дерево без окремого рішення.
+1. Спочатку налаштувати чотири власні директорії `storage.*` за розділом вище. Перевірити git branch --show-current: feat/nypost-refactoring. Не перемикати брудне робоче дерево без окремого рішення.
 2. Оператор запускає свій PostgreSQL NYPost. Compose цієї гілки: docker/docker-compose.yml, сервіс si-postgres, postgres:15, БД nypost_articles, host port 5437. Не запускати Hunter/Rifleman замість нього й не видаляти том із накопиченими даними.
 3. Перевірити JDBC URL/облікові дані та наявність існуючих таблиць. Це не інструкція перебудови БД. Нове розгортання потребує чинної повної схеми окремо; ddl-auto=validate її не створить.
 4. Задати collector.collection-batch-id для поточного збору. Нові URL зберігаються з цією назвою batch; потім її можна вказати в export.collection-batch-id, щоб експортувати саме цей набір.
