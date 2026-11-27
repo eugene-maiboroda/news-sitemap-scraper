@@ -54,7 +54,15 @@ public class DownloadVideosUseCase {
     }
 
     private void downloadVideoOne(VideoDownloadData data) {
-        DownloadResult result = videoDownloadPort.download(data);
+        DownloadResult result;
+        try {
+            result = videoDownloadPort.download(data);
+        } catch (RuntimeException e) {
+            log.error("Failed to download video {} for article {}", data.id(), data.articleId(), e);
+            videoPersistencePort.markFailed(data.id());
+            return;
+        }
+
         if (result.status() == DownloadStatus.DOWNLOADED) {
             videoPersistencePort.markDownloaded(data.id(), result.localFilePath(), result.fileSize());
         } else {

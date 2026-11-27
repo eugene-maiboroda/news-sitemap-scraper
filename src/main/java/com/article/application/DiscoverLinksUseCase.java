@@ -33,13 +33,16 @@ public class DiscoverLinksUseCase {
             if (runSettings.isStopRequested()) {
                 break;
             }
+            List<ArticleLink> links;
             try {
-                List<ArticleLink> links = sitemapDiscoveryPort.discoverLinks(sitemapUrl);
-                insertInBatches(links, batchSize);
-                log.info("Discovered {} links from {}", links.size(), sitemapUrl);
+                links = sitemapDiscoveryPort.discoverLinks(sitemapUrl);
             } catch (Exception e) {
                 log.error("Failed to discover links from {}", sitemapUrl, e);
+                continue;
             }
+
+            insertInBatches(links, batchSize);
+            log.info("Discovered {} links from {}", links.size(), sitemapUrl);
         }
     }
 

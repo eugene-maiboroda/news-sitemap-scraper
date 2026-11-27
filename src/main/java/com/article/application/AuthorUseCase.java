@@ -85,17 +85,29 @@ public class AuthorUseCase {
     }
 
     private Author enrichAuthor(Author author) {
-        return switch (authorParser.parse(author)) {
-            case AuthorParseResult.Success success -> success.author();
-            case AuthorParseResult.Failure failure -> {
-                log.warn("Failed to parse author {}: {}", author.authorUrl(), failure.error().reason());
-                yield author;
-            }
-        };
+        try {
+            return switch (authorParser.parse(author)) {
+                case AuthorParseResult.Success success -> success.author();
+                case AuthorParseResult.Failure failure -> {
+                    log.warn("Failed to parse author {}: {}", author.authorUrl(), failure.error().reason());
+                    yield author;
+                }
+            };
+        } catch (RuntimeException e) {
+            log.error("Failed to process author {}", author.authorUrl(), e);
+            return author;
+        }
     }
 
     private Author downloadAvatar(Author author) {
-        DownloadResult result = authorAvatarDownloadPort.download(author);
+        DownloadResult result;
+        try {
+            result = authorAvatarDownloadPort.download(author);
+        } catch (RuntimeException e) {
+            log.error("Failed to download avatar for author {}", author.authorUrl(), e);
+            return author;
+        }
+
         if (result.status() != DownloadStatus.DOWNLOADED) {
             log.warn("Failed to download avatar for author {}: {}", author.authorUrl(), author.avatarUrl());
             return author;

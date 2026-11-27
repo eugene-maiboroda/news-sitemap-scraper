@@ -57,7 +57,15 @@ public class DownloadImagesUseCase {
     }
 
     private void downloadOne(ImageDownloadData data) {
-        DownloadResult result = imageDownloadPort.download(data);
+        DownloadResult result;
+        try {
+            result = imageDownloadPort.download(data);
+        } catch (RuntimeException e) {
+            log.error("Failed to download image {} from {}", data.id(), data.imageUrl(), e);
+            imagePersistencePort.markFailed(data.id());
+            return;
+        }
+
         if (result.status() == DownloadStatus.DOWNLOADED) {
             imagePersistencePort.markDownloaded(data.id(), result.localFilePath(), result.fileSize());
         } else {
