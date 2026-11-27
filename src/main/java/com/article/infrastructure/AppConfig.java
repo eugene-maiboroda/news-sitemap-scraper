@@ -17,7 +17,7 @@ import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.DeserializationFeature;
@@ -66,7 +66,7 @@ public class AppConfig {
     }
 
     @Bean
-    @Profile("server")
+    @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
     public JsonMapperBuilderCustomizer pipelineJson() {
         return builder -> builder
                 .disable(MapperFeature.ALLOW_COERCION_OF_SCALARS)
@@ -80,7 +80,7 @@ public class AppConfig {
     }
 
     @Bean
-    @Profile("server")
+    @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
     public OpenApiCustomizer pipelineOpenApi(PipelineRunSettings settings, StepsProps steps) {
         return api -> {
             Snapshot defaults = settings.defaults();

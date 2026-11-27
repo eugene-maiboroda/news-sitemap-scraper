@@ -1,10 +1,10 @@
 # NYPost Article Pipeline — можливості та запуск оновлення
 
-Це контекст і інструкція для колеги та AI-асистента. Документ стосується **гілки `feat/nypost-refactoring`** репозиторію `si-article-pipeline-refactored`, сайту NYPost і чинної реалізації в цій гілці. Не переносити сюди профілі, MENU Discovery, RAW_HTML або властивості NRA-ILA/Hunter з інших гілок. Перед змінами читати AGENTS.md і docs/progress.md. Commit/push виконує користувач; БД, Discovery та скачування запускає оператор, не AI без окремого доручення.
+Це контекст і інструкція для колеги та AI-асистента. Документ стосується **гілки `feat/nypost-refactoring`** репозиторію `si-article-pipeline-refactored`, сайту NYPost і чинної реалізації в цій гілці. Не переносити сюди специфічні профілі інших сайтів, MENU Discovery, RAW_HTML або властивості NRA-ILA/Hunter з інших гілок. Перед змінами читати AGENTS.md і docs/progress.md. Commit/push виконує користувач; БД, Discovery та скачування запускає оператор, не AI без окремого доручення.
 
 ## Що вміє застосунок
 
-Java 21+, Maven, Spring Boot 4.0.1, PostgreSQL. Точка входу — `com.article.Main`. За замовчуванням — одноразовий console pipeline: Spring створює context, виконує вибрані кроки й завершує його. Профіль `server` залишає застосунок працювати для ручного керування через HTTP/Swagger; автоматичного scheduler немає.
+Java 21+, Maven, Spring Boot 4.0.1, PostgreSQL. Точка входу — `com.article.Main`. За замовчуванням — HTTP/Swagger в обох профілях `dev` і `prod`; без явного профілю обирається dev. Застосунок чекає ручного запуску кроків, автоматичного scheduler немає. Консольний режим доступний через `spring.main.web-application-type=none`: Spring виконує вибрані кроки й завершує context.
 
 Порядок: Discovery → парсинг → скачування фото → скачування відео → обробка авторів → експорт авторів → JSON статей. Кожен крок вмикається незалежно. Для контрольованого оновлення запускати по одному кроку, перевіряючи результат перед наступним.
 
@@ -14,19 +14,92 @@ Java 21+, Maven, Spring Boot 4.0.1, PostgreSQL. Точка входу — `com.a
 - **Автори:** process-authors знаходить кандидатів у статтях, додає невідомих авторів, перечитує профілі авторів і завантажує відсутні аватари. Export-authors окремо пише AllAuthors.json.
 - **JSON:** читає збережені статті й метадані медіа з БД; не перепарсує сайт. Підтримує весь набір або один collection batch та різні способи групування.
 
-## HTTP / Swagger: постійний режим без автоматичного збору
+## Docker dev/prod та environment
 
-Це альтернативний запуск того самого pipeline. У server profile кроки не стартують автоматично, навіть якщо в базових properties є `steps.*.enabled=true`. Кожен HTTP-запит запускає тільки свій крок. Налаштування запиту не переписують application.properties й не змінюють активний запуск.
+Є **один** файл `docker/docker-compose.yml` із двома сервісами: `app` та `si-postgres`. Набір значень вибирає `--env-file`; контейнер застосунку отримує лише явно перелічені в Compose змінні `environment`. Реальні `.env` та `.env.example` локальні й ignored за домовленістю; на новому checkout їх потрібно створити вручну. `.env` не шифрує секрети і не копіюється в image. Не друкувати `docker compose config` без `--quiet`, бо повний результат містить паролі.
 
-Перед запуском оператор перевіряє підключення до потрібної існуючої БД. Як і console, server потребує робочої схеми: `ddl-auto=validate` збережено. Команда нижче — реальний старт із підключенням до БД, не команда офлайн-перевірки; AI її не виконував:
+Файли: `docker/dev/.env`, `docker/prod/.env`; відповідні `.env.example` пояснюють потрібні значення без реальних паролів. На цьому робочому комп’ютері dev `.env` уже містить перенесені чинні DB credentials; їх не замінювати example значеннями. Prod має окремий згенерований пароль, `API_HOST=localhost` поки є заглушкою до визначення адреси сервера.
 
-```sh
-mvn spring-boot:run -Dspring-boot.run.profiles=server
+| Змінна | Що задати |
+| --- | --- |
+| COMPOSE_PROJECT_NAME | dev: **docker**, щоб зберегти чинний volume; prod: article-pipeline-prod |
+| SPRING_PROFILES_ACTIVE | Docker dev: dev; prod: prod |
+| API_HOST | Hostname/IP для Swagger-посилання, без http:// та порту; локально localhost |
+| API_PORT | Порт застосунку та опублікований API порт; поточно 8080 |
+| POSTGRES_DB | Назва БД, поточно nypost_articles |
+| POSTGRES_USER / POSTGRES_PASSWORD | Чинні локальні credentials для dev; окремі серверні для prod |
+| POSTGRES_PORT | Порт БД на host: dev 5437, prod приклад 5438; публікація **тільки 127.0.0.1** |
+| DATA_DIR | Абсолютний host шлях до постійних JSON/media; у Docker монтується як /data |
+
+Для ручного створення environment на новому checkout використати наведений шаблон із власними значеннями; він не призначений для заміни чинного локального `.env`:
+
+```dotenv
+COMPOSE_PROJECT_NAME=docker
+SPRING_PROFILES_ACTIVE=dev
+API_HOST=localhost
+API_PORT=8080
+POSTGRES_PORT=5437
+POSTGRES_DB=nypost_articles
+POSTGRES_USER=your_existing_local_user
+POSTGRES_PASSWORD='your_existing_local_password'
+DATA_DIR=/absolute/path/to/existing/data
 ```
 
-В IDE: запустити Main із program argument `--spring.profiles.active=server`. Для повернення до console прибрати цей профіль і запускати як раніше через properties.
+Для prod змінити COMPOSE_PROJECT_NAME, SPRING_PROFILES_ACTIVE, POSTGRES_PORT, credentials, DATA_DIR та зовнішній API_HOST. Пароль із `$` зберігати single-quoted. Для реального `.env` задати права `chmod 600`; не commit/push.
 
-За стандартного порту 8080: [Swagger UI](http://localhost:8080/swagger-ui/index.html), [OpenAPI JSON](http://localhost:8080/v3/api-docs). Профіль `server` працює також на локальному комп’ютері; назва профілю не означає виконане розгортання. Перенесення застосунку/БД і налаштування доступу — окрема задача.
+### Локально: PostgreSQL у Docker, застосунок з IDE
+
+Команди нижче виконує оператор; вони можуть пересоздати контейнер зі збереженням volume. Підготовка конфігурації агентом сама їх не запускає.
+
+```sh
+docker compose --env-file docker/dev/.env -f docker/docker-compose.yml up -d si-postgres
+```
+
+В IDE передати `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT`, `API_HOST`, `API_PORT`, `DATA_DIR` з **dev** environment. Через підтримуване IDE завантаження env-file або вручну в Environment variables; Compose `.env` не завантажується Spring автоматично. Active profile у Run Configuration: `dev`. Для console додатково задати program argument `--spring.main.web-application-type=none` (або environment `SPRING_MAIN_WEB_APPLICATION_TYPE=none`).
+
+Main використовує `application-dev.properties`: JDBC на **127.0.0.1:5437**, API на **localhost:8080** за поточного env. Для Maven після експорту dev environment:
+
+```sh
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+Після старту `AppRunner` друкує `Swagger UI available at http://<API_HOST>:<API_PORT>/api/v1/swagger-ui/index.html`. За непорожнього server.servlet.context-path він також включений. У console (`spring.main.web-application-type=none`) URL runner і HTTP controller не створюються; CollectRunner виконує ввімкнені кроки. Окремого профілю server більше немає.
+
+### Сервер: застосунок і PostgreSQL у Docker
+
+Перед майбутнім запуском перевірити prod `.env`, створення доступного DATA_DIR, schema/restore та передачу потрібних media. Команда запуску після цих окремих операторських дій:
+
+```sh
+docker compose --env-file docker/prod/.env -f docker/docker-compose.yml up -d --build
+```
+
+Локально весь dev Compose можна запустити аналогічно з dev env. Порт API не повинен конфліктувати з одночасно запущеним IDE сервісом. У Docker застосунок звертається до **si-postgres:5432**, а не localhost чи host port. БД недоступна ззовні через опублікований порт: лише `127.0.0.1:${POSTGRES_PORT}`. API_HOST визначає друковане HTTP-посилання; HTTPS/reverse proxy у цьому scope не налаштовані.
+
+### Постійні дані та межі перевірки
+
+Volume оголошено прямо в YAML: `si_article_pgdata:`. Dev project **docker** зберігає фізичний **docker_si_article_pgdata**, який уже містить локальні дані. Не змінювати project name для цього dev набору: інша назва означатиме інший volume. Prod project article-pipeline-prod використовує окремий article-pipeline-prod_si_article_pgdata. Змінні shell можуть перевизначити значення --env-file; перед запуском перевірити, яке оточення завантажене. Однакова структура не означає автоматичне копіювання локальної БД на сервер.
+
+Новий volume PostgreSQL міститиме нову БД без прикладної схеми. `ddl-auto=validate` не створює таблиць: потрібне окремо погоджене відновлення/підготовка БД перед стартом app. Зміна POSTGRES_PASSWORD у `.env` не змінює пароль уже створеної PostgreSQL ролі. Не видаляти volumes для «виправлення» credentials. Дамп користувач створив, але відновлення ще не перевіряли.
+
+Host DATA_DIR монтується в app як `/data`; підкаталоги ті самі для IDE/Docker: exportJson, articles-foto, articles-video, author-avatars. У Swagger для Docker передавати шляхи `/data/...`; шлях із ноутбука поза mount контейнеру недоступний. Старі абсолютні local_file_path у БД автоматично не переписуються; сумісність старих media paths треба звірити перед експортом на сервері.
+
+Dockerfile готує Java21, yt-dlp/ffmpeg та Chromium через CLI поточної Playwright dependency. Джерела команд: [Playwright Java browsers](https://playwright.dev/java/docs/browsers), [yt-dlp installation](https://github.com/yt-dlp/yt-dlp/wiki/Installation). Завантаження конкретних відеоджерел може потребувати додаткових runtime умов: його перевіряють окремо. Image build, Chromium/yt-dlp runtime, повний startup та server deployment агент у цій задачі не виконує. В HTTP режимі startup pipeline не запускається; робота починається лише після POST enabled=true.
+
+## HTTP / Swagger: постійний режим без автоматичного збору
+
+Це альтернативний запуск того самого pipeline. В HTTP режимі кроки не стартують автоматично, навіть якщо в базових properties є `steps.*.enabled=true`. Кожен HTTP-запит запускає тільки свій крок. Налаштування запиту не переписують application.properties й не змінюють активний запуск.
+
+Перед запуском оператор перевіряє підключення до потрібної існуючої БД. Як і console, HTTP режим потребує робочої схеми: `ddl-auto=validate` збережено. Команда нижче — реальний старт із підключенням до БД, не команда офлайн-перевірки; AI її не виконував:
+
+```sh
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+В IDE: запустити Main із program argument `--spring.profiles.active=dev`. Для console додати `--spring.main.web-application-type=none`. Передати dev environment за розділом Docker dev/prod вище; Spring не читає Docker `.env` автоматично.
+
+За стандартного порту 8080: [Swagger UI](http://localhost:8080/api/v1/swagger-ui/index.html), [OpenAPI JSON](http://localhost:8080/api/v1/v3/api-docs). Обидва профілі `dev` і `prod` мають Swagger; окремого server profile немає. Перенесення застосунку/БД і налаштування доступу — окрема задача.
+
+Усі наведені нижче `/pipeline/...` маршрути відносні до context path `/api/v1`: наприклад, повний Discovery URL — `/api/v1/pipeline/discovery`.
 
 ### Налаштування запитів
 
@@ -101,15 +174,15 @@ Topics/tags збираються разом під час звичайного �
 
 ## Поточна конфігурація гілки
 
-Джерело істини — src/main/resources/application.properties. Значення нижче звірені з файлом під час підготовки документа; перед запуском перечитати файл, бо оператор може змінити його. Пароль сюди не копіюємо.
+Джерело істини — src/main/resources/application.properties та application-dev.properties / application-prod.properties, разом із environment вибраного запуску. Значення нижче звірені з файлом під час підготовки документа; перед запуском перечитати файл, бо оператор може змінити його. Пароль сюди не копіюємо.
 
 | Ключ | Поточне значення / значення для запуску |
 | --- | --- |
-| spring.datasource.url | PostgreSQL nypost_articles на localhost:5437; повний JDBC URL у локальному properties |
-| spring.datasource.username/password | Налаштовані локально; звірити з PostgreSQL, не переносити секрети в документацію |
-| spring.main.web-application-type | none; server profile — servlet |
-| springdoc.api-docs.enabled / springdoc.swagger-ui.enabled | false / false; server profile — true / true |
-| springdoc.swagger-ui.tags-sorter / springdoc.ai.mcp.enabled | alpha / false у server profile |
+| spring.datasource.url | IDE dev: 127.0.0.1:${POSTGRES_PORT}/${POSTGRES_DB}; Docker: si-postgres:5432/${POSTGRES_DB}; rewriteBatchedInserts=true |
+| spring.datasource.username/password | ${POSTGRES_USER} / ${POSTGRES_PASSWORD} з environment; у properties паролів немає |
+| spring.main.web-application-type | servlet для dev/prod; для console явно none |
+| springdoc.api-docs.enabled / springdoc.swagger-ui.enabled | true / true в HTTP режимі dev/prod |
+| springdoc.swagger-ui.tags-sorter | alpha |
 | spring.jpa.hibernate.ddl-auto | validate — перевіряє схему, не створює міграцій |
 | spring.jpa.show-sql | false |
 | logging.level.root / logging.level.com.article / logging.level.com.article.adapter.video | INFO / INFO / INFO |
@@ -130,23 +203,16 @@ Topics/tags збираються разом під час звичайного �
 | collector.sitemap-urls[1] | https://nypost.com/sitemap-2026.xml |
 | export.mode | tags |
 | export.collection-batch-id | порожньо — повний набір |
-| storage.export-dir | /Users/eugene/workspace/dataox/eyalProject2/exportJson |
-| storage.images-dir | /Users/eugene/workspace/dataox/eyalProject2/articles-foto |
-| storage.videos-dir | /Users/eugene/workspace/dataox/eyalProject2/articles-video |
-| storage.avatars-dir | /Users/eugene/workspace/dataox/eyalProject2/author-avatars |
+| storage.export-dir | ${DATA_DIR}/exportJson |
+| storage.images-dir | ${DATA_DIR}/articles-foto |
+| storage.videos-dir | ${DATA_DIR}/articles-video |
+| storage.avatars-dir | ${DATA_DIR}/author-avatars |
 
 У цій гілці немає потреби задавати collector.site, collector.discovery-source чи профіль nrlila. Усі batch-size увімкнених Step мають бути >0; export-authors і extract-connatix — ToggleStep без batch-size. Batch-size обмежує розмір пакета, а не загальну кількість статей: цикл продовжується до завершення черги.
 
 ## Обов’язково для console: власні директорії на комп’ютері колеги
 
-До console запуску змінити **чотири** ключі `storage.*` у `src/main/resources/application.properties`. Наявні абсолютні шляхи `/Users/eugene/...` належать комп’ютеру попереднього виконавця й не повинні залишатися для роботи колеги. Вказати власні доступні для запису директорії; приклад нижче використовує `/absolute/path` як позначення, яке потрібно замінити своїм реальним шляхом:
-
-```properties
-storage.export-dir=/absolute/path/nypost/export
-storage.images-dir=/absolute/path/nypost/images
-storage.videos-dir=/absolute/path/nypost/videos
-storage.avatars-dir=/absolute/path/nypost/avatars
-```
+Для IDE задати `DATA_DIR` у локальному environment: корінь із підкаталогами `exportJson`, `articles-foto`, `articles-video`, `author-avatars`. Dev properties підставляють цей корінь у чотири `storage.*` ключі; у Docker цей самий корінь змонтований як `/data`. Фізичні файли не переміщуються. Для іншої структури директорій оператор може явно перевизначити відповідні `storage.*` у Run Configuration. Персональних абсолютних шляхів у tracked properties немає.
 
 `export-dir` — JSON статей і авторів; `images-dir` — скачані фото; `videos-dir` — скачані відео; `avatars-dir` — аватари авторів. Для кожної поставки/режиму експорту обирати окрему output-директорію. Переконатися, що на диску достатньо місця.
 
@@ -154,7 +220,7 @@ storage.avatars-dir=/absolute/path/nypost/avatars
 
 ## Перед першим запуском із batch
 
-1. Спочатку налаштувати чотири власні директорії `storage.*` за розділом вище. Перевірити git branch --show-current: feat/nypost-refactoring. Не перемикати брудне робоче дерево без окремого рішення.
+1. Спочатку передати dev environment та перевірити DATA_DIR і storage директорії за розділом вище. Перевірити git branch --show-current: feat/nypost-refactoring. Не перемикати брудне робоче дерево без окремого рішення.
 2. Оператор запускає свій PostgreSQL NYPost. Compose цієї гілки: docker/docker-compose.yml, сервіс si-postgres, postgres:15, БД nypost_articles, host port 5437. Не запускати Hunter/Rifleman замість нього й не видаляти том із накопиченими даними.
 3. Перевірити JDBC URL/облікові дані та наявність існуючих таблиць. Це не інструкція перебудови БД. Нове розгортання потребує чинної повної схеми окремо; ddl-auto=validate її не створить.
 4. Задати collector.collection-batch-id для поточного збору. Нові URL зберігаються з цією назвою batch; потім її можна вказати в export.collection-batch-id, щоб експортувати саме цей набір.
@@ -165,10 +231,10 @@ storage.avatars-dir=/absolute/path/nypost/avatars
 Команда оператора після перевірки налаштувань:
 
 ```sh
-mvn spring-boot:run
+mvn spring-boot:run -Dspring-boot.run.arguments=--spring.main.web-application-type=none
 ```
 
-В IntelliJ запустити com.article.Main. Це реальний запуск вибраних кроків із підключенням до БД, не перевірка конфігурації. Для compile без збору: `mvn -o -q -DskipTests test-compile`.
+В IntelliJ запустити com.article.Main із `--spring.main.web-application-type=none`. Це реальний запуск вибраних кроків із підключенням до БД, не перевірка конфігурації. Для compile без збору: `mvn -o -q -DskipTests test-compile`.
 
 ## Покрокове оновлення існуючих даних
 

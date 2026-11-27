@@ -4,7 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.core.env.Profiles;
+import org.springframework.web.context.WebApplicationContext;
 
 @SpringBootApplication
 @ConfigurationPropertiesScan
@@ -12,7 +12,7 @@ public class Main {
 
     public static void main(String[] args) {
         ConfigurableApplicationContext context = SpringApplication.run(Main.class, args);
-        if (!context.getEnvironment().acceptsProfiles(Profiles.of("server"))) {
+        if (!(context instanceof WebApplicationContext)) {
             SpringApplication.exit(context);
         }
     }

@@ -18,7 +18,7 @@ import com.article.bootstrap.properties.StepsProps;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -38,7 +38,7 @@ import java.util.function.Supplier;
 
 @Slf4j
 @RestController
-@Profile("server")
+@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @RequestMapping(value = "/pipeline", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 public class PipelineController {

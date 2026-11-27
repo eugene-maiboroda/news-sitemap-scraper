@@ -84,7 +84,8 @@ application-test.yaml
 ############################################
 .env
 .env.*
-!.env.example
+# Environment examples are local by explicit user request.
+.env.example
 
 ############################################
 # Secrets

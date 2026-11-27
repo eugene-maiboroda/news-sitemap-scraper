@@ -1,0 +1,11 @@
+# Only Maven sources enter the build context. Local environments never do.
+**
+!pom.xml
+!src/
+!src/**
+.env
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/*.jks
