@@ -39,6 +39,15 @@ public class ParseArticlesUseCase {
     }
 
     private void parseSingle(ArticleLink link) {
+        try {
+            parseAndSave(link);
+        } catch (RuntimeException e) {
+            log.error("Failed to process article {}", link.articleUrl(), e);
+            articlePersistencePort.markError(link.articleUrl(), "Article processing failed; see application logs for details");
+        }
+    }
+
+    private void parseAndSave(ArticleLink link) {
         long start = System.currentTimeMillis();
         switch (articleParserPort.parse(link)) {
             case ParseResult.Success success -> {
