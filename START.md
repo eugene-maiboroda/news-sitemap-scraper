@@ -4,7 +4,7 @@
 
 ## Що вміє застосунок
 
-Java 21+, Maven, Spring Boot 4.0.1, PostgreSQL. Точка входу — `com.article.Main`. Одноразовий console pipeline: Spring створює context, виконує вибрані кроки й завершує його. Це не постійний сервер або автоматичний scheduler.
+Java 21+, Maven, Spring Boot 4.0.1, PostgreSQL. Точка входу — `com.article.Main`. За замовчуванням — одноразовий console pipeline: Spring створює context, виконує вибрані кроки й завершує його. Профіль `server` залишає застосунок працювати для ручного керування через HTTP/Swagger; автоматичного scheduler немає.
 
 Порядок: Discovery → парсинг → скачування фото → скачування відео → обробка авторів → експорт авторів → JSON статей. Кожен крок вмикається незалежно. Для контрольованого оновлення запускати по одному кроку, перевіряючи результат перед наступним.
 
@@ -13,6 +13,57 @@ Java 21+, Maven, Spring Boot 4.0.1, PostgreSQL. Точка входу — `com.a
 - **Медіа:** окремі кроки читають PENDING із image/videos. Успіх → DOWNLOADED із local_file_path/file_size, невдача → FAILED. Файли не скачуються лише від увімкнення парсингу.
 - **Автори:** process-authors знаходить кандидатів у статтях, додає невідомих авторів, перечитує профілі авторів і завантажує відсутні аватари. Export-authors окремо пише AllAuthors.json.
 - **JSON:** читає збережені статті й метадані медіа з БД; не перепарсує сайт. Підтримує весь набір або один collection batch та різні способи групування.
+
+## HTTP / Swagger: постійний режим без автоматичного збору
+
+Це альтернативний запуск того самого pipeline. У server profile кроки не стартують автоматично, навіть якщо в базових properties є `steps.*.enabled=true`. Кожен HTTP-запит запускає тільки свій крок. Налаштування запиту не переписують application.properties й не змінюють активний запуск.
+
+Перед запуском оператор перевіряє підключення до потрібної існуючої БД. Як і console, server потребує робочої схеми: `ddl-auto=validate` збережено. Команда нижче — реальний старт із підключенням до БД, не команда офлайн-перевірки; AI її не виконував:
+
+```sh
+mvn spring-boot:run -Dspring-boot.run.profiles=server
+```
+
+В IDE: запустити Main із program argument `--spring.profiles.active=server`. Для повернення до console прибрати цей профіль і запускати як раніше через properties.
+
+За стандартного порту 8080: [Swagger UI](http://localhost:8080/swagger-ui/index.html), [OpenAPI JSON](http://localhost:8080/v3/api-docs). Профіль `server` працює також на локальному комп’ютері; назва профілю не означає виконане розгортання. Перенесення застосунку/БД і налаштування доступу — окрема задача.
+
+### Налаштування запитів
+
+У Swagger потрібні для заповнення поля стоять першими, технічні параметри нижче вже мають приклади/defaults із чинних properties. У прикладі `enabled=false`, щоб незмінений запит не запускав роботу. Для запуску виставити true й заповнити обов’язкові поля.
+
+- Завжди явно передавати boolean `enabled`. false повертає поточний стан без запуску та без зупинки активної роботи; робочі required поля й числові обмеження для такого no-op не перевіряються. Синтаксичні JSON помилки/неправильні типи все одно дають 400.
+- Для Discovery явно задавати `collectionBatchId` та непорожній `sitemapUrls` річних HTTP(S) sitemap. Старі значення з properties для них автоматично не підставляються.
+- Для файлового кроку явно задавати його директорію: imagesDir / videosDir / avatarsDir / exportDir. Шлях належить машині застосунку. Локальний шлях комп’ютера, на якому відкрито Swagger, не переносить файлів на цю машину.
+- Технічні параметри можна пропускати або передавати null: застосовуються чинні properties. Наведені нижче числа — їхній стан на момент підготовки документа; Swagger показує фактичні defaults запущеного застосунку.
+- batchSize/parseThreads/timeouts мають бути >0, sitemapDelayMs >=0. batchSize — пакет, не загальний ліміт статей. JSON типи строгі: `true`, а не `"true"`; кількість — ціле число.
+
+| POST | Приклад body (замінити директорії на свої) |
+| --- | --- |
+| `/pipeline/discovery` | `{"enabled":true,"collectionBatchId":"update-002","sitemapUrls":["https://nypost.com/sitemap-2026.xml"],"batchSize":5000,"sitemapDelayMs":150}` |
+| `/pipeline/parsing` | `{"enabled":true,"batchSize":5000,"parseThreads":15,"extractConnatixVideos":false,"browserEnabled":false,"browserHeadless":true,"browserTimeoutMs":30000}` |
+| `/pipeline/download-images` | `{"enabled":true,"imagesDir":"/absolute/path/nypost/images","batchSize":5000,"parseThreads":15}` |
+| `/pipeline/download-videos` | `{"enabled":true,"videosDir":"/absolute/path/nypost/videos","batchSize":10,"parseThreads":15,"timeoutSeconds":300}` |
+| `/pipeline/process-authors` | `{"enabled":true,"avatarsDir":"/absolute/path/nypost/avatars","batchSize":2000,"parseThreads":15}` |
+| `/pipeline/export-authors` | `{"enabled":true,"exportDir":"/absolute/path/nypost/update-002/authors"}` |
+| `/pipeline/export-json` | `{"enabled":true,"exportDir":"/absolute/path/nypost/update-002/topics","batchSize":5000,"collectionBatchId":"update-002","mode":"TOPICS"}` |
+
+Мінімальний Discovery запит — enabled, collectionBatchId і sitemapUrls; batchSize/delay можна прибрати. Мінімальний Parsing — тільки `{"enabled":true}`; для файлових кроків додати директорію. Connatix вмикати разом із browserEnabled=true; браузер/native залежності мають бути встановлені оператором. Це опція парсингу NEW, не окремий backfill крок.
+
+`parseThreads` застосовується до паралельного кроку, включно з фото/відео/авторами. `timeoutSeconds` у HTTP — секунди очікування yt-dlp; старий локальний ключ video.timeout-ms збережений і фактично теж задає секунди. Шлях до yt-dlp, datasource/JPA/logging залишаються startup properties.
+
+Парсинг обробляє всю NEW-чергу, фото/відео — відповідні PENDING, автори — глобальний набір. Ці кроки не фільтруються collection batch. У JSON mode вибирає CATEGORY / TOPICS / TAGS; TAGS залишається спеціальним Sports Betting. Пропущений/null export collectionBatchId бере property; явно `""` означає весь набір. Невідомий batch дає порожню вибірку. Для різних поставок/mode вибирати різні exportDir: JSON не дописує попередню поставку, файли можуть перезаписуватися.
+
+### Відповіді, стан та Stop
+
+- POST запуску: `202` — роботу прийнято у фоні; відповідь RUNNING не означає завершення. `200` — enabled=false/no-op. `409` — вже є RUNNING або STOPPING: запит відхилено, не збережено, черги немає. Після завершення оператор повторює запит сам.
+- `400` — неправильні параметри/JSON, формат `{"error":{"code":"INVALID_REQUEST","message":"Request validation failed","errors":{...}}}`. `500` — неочікуваний збій приймання запиту, без технічних подробиць. Помилки фонової роботи перевіряти окремим GET.
+- `GET /pipeline/status`: step, status, startedAt, finishedAt, errorMessage. Стани IDLE / RUNNING / STOPPING / COMPLETED / STOPPED / FAILED. Час — ISO Instant. Зберігається тільки останній запуск у пам’яті; після рестарту IDLE без історії, дані БД не скидаються. Job ID немає.
+- `POST /pipeline/stop` без body: перший запит під RUNNING дає `202`/STOPPING; повторний або без активної роботи — `200`/поточний стан. Не перериває вже розпочату статтю/файл/HTTP операцію посеред записів; наступні елементи не починаються. Зупинка може чекати чинних timeout, завершення workers та cleanup. До цього інші старти отримують 409. Після завершення STOPPED; справжня помилка має пріоритет і дає FAILED.
+
+COMPLETED означає нормальне повернення кроку, а не гарантію повноти sitemap або відсутності ERROR/FAILED у рядках БД. Дивитися логи й перевіряти дані перед наступним кроком. Stop не відкочує вже збережене: повторні Discovery/Parsing/Downloads використовують чинну дедуплікацію/NEW/PENDING. Зупинений export — частковий, навіть якщо JSON синтаксично коректний; повторити повністю в окремий каталог. Готові файли цим API не скачуються.
+
+Офлайн-перевірки HTTP/MVC і OpenAPI не замінюють запуску повного застосунку зі справжньою БД. Перевірку відновлення дампу, Spring/JPA startup та роботу з реальною БД/NYPost оператор виконує окремо; AI цих дій не виконував.
 
 ## Значення collection batch
 
@@ -56,7 +107,9 @@ Topics/tags збираються разом під час звичайного �
 | --- | --- |
 | spring.datasource.url | PostgreSQL nypost_articles на localhost:5437; повний JDBC URL у локальному properties |
 | spring.datasource.username/password | Налаштовані локально; звірити з PostgreSQL, не переносити секрети в документацію |
-| spring.main.web-application-type | none |
+| spring.main.web-application-type | none; server profile — servlet |
+| springdoc.api-docs.enabled / springdoc.swagger-ui.enabled | false / false; server profile — true / true |
+| springdoc.swagger-ui.tags-sorter / springdoc.ai.mcp.enabled | alpha / false у server profile |
 | spring.jpa.hibernate.ddl-auto | validate — перевіряє схему, не створює міграцій |
 | spring.jpa.show-sql | false |
 | logging.level.root / logging.level.com.article / logging.level.com.article.adapter.video | INFO / INFO / INFO |
@@ -84,9 +137,9 @@ Topics/tags збираються разом під час звичайного �
 
 У цій гілці немає потреби задавати collector.site, collector.discovery-source чи профіль nrlila. Усі batch-size увімкнених Step мають бути >0; export-authors і extract-connatix — ToggleStep без batch-size. Batch-size обмежує розмір пакета, а не загальну кількість статей: цикл продовжується до завершення черги.
 
-## Обов’язково: власні директорії на комп’ютері колеги
+## Обов’язково для console: власні директорії на комп’ютері колеги
 
-До будь-якого запуску змінити **чотири** ключі `storage.*` у `src/main/resources/application.properties`. Наявні абсолютні шляхи `/Users/eugene/...` належать комп’ютеру попереднього виконавця й не повинні залишатися для роботи колеги. Вказати власні доступні для запису директорії; приклад нижче використовує `/absolute/path` як позначення, яке потрібно замінити своїм реальним шляхом:
+До console запуску змінити **чотири** ключі `storage.*` у `src/main/resources/application.properties`. Наявні абсолютні шляхи `/Users/eugene/...` належать комп’ютеру попереднього виконавця й не повинні залишатися для роботи колеги. Вказати власні доступні для запису директорії; приклад нижче використовує `/absolute/path` як позначення, яке потрібно замінити своїм реальним шляхом:
 
 ```properties
 storage.export-dir=/absolute/path/nypost/export

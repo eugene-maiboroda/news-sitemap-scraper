@@ -8,6 +8,8 @@ import com.article.bootstrap.properties.ExportProps;
 import com.article.bootstrap.properties.StorageProps;
 import com.article.bootstrap.properties.VideoProps;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +19,7 @@ public final class PipelineRequests {
     private PipelineRequests() {
     }
 
+    @Schema(name = "DiscoveryRequest")
     public record DiscoveryRequest(
 
             Boolean enabled,
@@ -49,6 +52,7 @@ public final class PipelineRequests {
         }
     }
 
+    @Schema(name = "ParsingRequest")
     public record ParsingRequest(
 
             Boolean enabled,
@@ -90,6 +94,7 @@ public final class PipelineRequests {
         }
     }
 
+    @Schema(name = "DownloadImagesRequest")
     public record DownloadImagesRequest(
 
             Boolean enabled,
@@ -116,6 +121,7 @@ public final class PipelineRequests {
         }
     }
 
+    @Schema(name = "DownloadVideosRequest")
     public record DownloadVideosRequest(
 
             Boolean enabled,
@@ -147,6 +153,7 @@ public final class PipelineRequests {
         }
     }
 
+    @Schema(name = "ProcessAuthorsRequest")
     public record ProcessAuthorsRequest(
 
             Boolean enabled,
@@ -173,6 +180,7 @@ public final class PipelineRequests {
         }
     }
 
+    @Schema(name = "ExportAuthorsRequest")
     public record ExportAuthorsRequest(
 
             Boolean enabled,
@@ -190,6 +198,7 @@ public final class PipelineRequests {
         }
     }
 
+    @Schema(name = "ExportJsonRequest")
     public record ExportJsonRequest(
 
             Boolean enabled,
@@ -249,7 +258,12 @@ public final class PipelineRequests {
         List<String> urls = new ArrayList<>(values.size());
         for (String value : values) {
             String url = requiredText(value, "sitemapUrls");
-            URI uri = URI.create(url);
+            URI uri;
+            try {
+                uri = URI.create(url);
+            } catch (IllegalArgumentException exception) {
+                throw new IllegalArgumentException("sitemapUrls must contain HTTP(S) URLs");
+            }
             boolean http = "http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme());
             if (!http || uri.getHost() == null) {
                 throw new IllegalArgumentException("sitemapUrls must contain HTTP(S) URLs");
