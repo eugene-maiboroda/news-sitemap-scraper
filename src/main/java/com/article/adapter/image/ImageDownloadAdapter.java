@@ -2,9 +2,9 @@ package com.article.adapter.image;
 
 import com.article.adapter.http.HttpContentLoader;
 import com.article.adapter.shared.FileNaming;
-import com.article.bootstrap.properties.StorageProps;
-import com.article.application.dto.ImageDownloadData;
+import com.article.application.PipelineRunSettings;
 import com.article.application.dto.DownloadResult;
+import com.article.application.dto.ImageDownloadData;
 import com.article.port.out.ImageDownloadPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,13 +21,13 @@ import java.nio.file.StandardCopyOption;
 public class ImageDownloadAdapter implements ImageDownloadPort {
 
     private final HttpContentLoader contentLoader;
-    private final StorageProps storageProps;
+    private final PipelineRunSettings runSettings;
 
     @Override
     public DownloadResult download(ImageDownloadData data) {
         Path temporaryFile = null;
         try {
-            Path dir = Path.of(storageProps.imagesDir(), FileNaming.categorySlug(data.category()));
+            Path dir = Path.of(runSettings.current().storage().imagesDir(), FileNaming.categorySlug(data.category()));
             String fileName = FileNaming.imageFilePrefix(
                     data.category(),
                     data.articleId(),

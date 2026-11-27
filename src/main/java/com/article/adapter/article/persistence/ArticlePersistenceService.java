@@ -1,17 +1,16 @@
 package com.article.adapter.article.persistence;
 
 import com.article.adapter.article.mapper.ArticleMapper;
+import com.article.adapter.article.persistence.entity.ArticleEntity;
 import com.article.adapter.article.persistence.entity.CrawlStatus;
 import com.article.adapter.article.persistence.entity.LinkArticleEntity;
-import com.article.bootstrap.properties.CollectorProps;
-import com.article.bootstrap.properties.ExportProps;
-import com.article.adapter.article.persistence.entity.ArticleEntity;
+import com.article.application.PipelineRunSettings;
 import com.article.domain.article.Article;
 import com.article.domain.article.ArticleLink;
 import com.article.domain.article.ArticleMetadata;
 import com.article.domain.article.ArticleWithMetadata;
-import com.article.port.out.persistence.ArticlePersistencePort;
 import com.article.port.out.IdGenerationPort;
+import com.article.port.out.persistence.ArticlePersistencePort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -39,8 +38,7 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
     private final ArticleMapper articleMapper;
     private final JdbcTemplate jdbcTemplate;
     private final IdGenerationPort idGenerationPort;
-    private final CollectorProps collectorProps;
-    private final ExportProps exportProps;
+    private final PipelineRunSettings runSettings;
 
     @Override
     @Transactional
@@ -48,7 +46,7 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
         if (links.isEmpty()) {
             return;
         }
-        String collectionBatchId = collectorProps.collectionBatchId();
+        String collectionBatchId = runSettings.current().collector().collectionBatchId();
         if (collectionBatchId == null || collectionBatchId.isBlank()) {
             throw new IllegalArgumentException("Set collector.collection-batch-id before discovering new links");
         }
@@ -85,7 +83,7 @@ public class ArticlePersistenceService implements ArticlePersistencePort {
     @Override
     public List<ArticleWithMetadata> findArticlesForExport(int page, int pageSize) {
         PageRequest pageRequest = PageRequest.of(page, pageSize);
-        String collectionBatchId = exportProps.collectionBatchId();
+        String collectionBatchId = runSettings.current().export().collectionBatchId();
         List<ArticleEntity> articles;
         if (collectionBatchId == null) {
             articles = articleRepository.findAllByOrderByPublishDateAscIdAsc(pageRequest);

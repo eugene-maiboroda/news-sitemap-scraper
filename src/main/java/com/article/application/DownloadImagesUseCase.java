@@ -23,6 +23,7 @@ public class DownloadImagesUseCase {
     private final ImagePersistencePort imagePersistencePort;
     private final ImageDownloadPort imageDownloadPort;
     private final ParallelExecutor parallelExecutor;
+    private final PipelineRunSettings runSettings;
 
     public void downloadImages(int batchSize) {
         log.info("Step: DOWNLOAD IMAGES");
@@ -30,7 +31,8 @@ public class DownloadImagesUseCase {
         int batches = 0;
         int downloaded = 0;
         List<Image> batch;
-        while (!(batch = imagePersistencePort.findPendingImages(batchSize)).isEmpty()) {
+        while (!runSettings.isStopRequested()
+                && !(batch = imagePersistencePort.findPendingImages(batchSize)).isEmpty()) {
             Map<String, String> categories = articlePersistencePort.findCategoriesByArticleIds(
                     batch.stream().map(Image::articleId).distinct().toList()
             );
@@ -47,7 +49,11 @@ public class DownloadImagesUseCase {
             batches++;
             downloaded += downloadBatch.size();
         }
-        log.info("Download finished ({} images, {} batches)", downloaded, batches);
+        if (runSettings.isStopRequested()) {
+            log.info("Image download stopped");
+        } else {
+            log.info("Download finished ({} images, {} batches)", downloaded, batches);
+        }
     }
 
     private void downloadOne(ImageDownloadData data) {

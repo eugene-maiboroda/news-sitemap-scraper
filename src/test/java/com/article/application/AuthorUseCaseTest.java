@@ -29,7 +29,8 @@ class AuthorUseCaseTest {
             parser,
             parallelExecutor,
             exportPort,
-            avatarDownloadPort
+            avatarDownloadPort,
+            mock(PipelineRunSettings.class)
     );
 
     @Test

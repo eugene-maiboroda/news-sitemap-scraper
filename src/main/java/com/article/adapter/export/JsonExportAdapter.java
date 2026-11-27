@@ -3,7 +3,11 @@ package com.article.adapter.export;
 import com.article.adapter.export.dto.ArticleExportDto;
 import com.article.adapter.export.model.JsonExportTarget;
 import com.article.adapter.export.model.PreparedArticleExport;
+import com.article.adapter.export.resolver.CategoryExportTargetResolver;
 import com.article.adapter.export.resolver.ExportTargetResolver;
+import com.article.adapter.export.resolver.SportsBettingExportTargetResolver;
+import com.article.adapter.export.resolver.TopicExportTargetResolver;
+import com.article.application.PipelineRunSettings;
 import com.article.application.dto.ArticleExportBatch;
 import com.article.port.out.ArticleExportPort;
 import jakarta.annotation.PreDestroy;
@@ -20,10 +24,11 @@ import java.util.Map;
 public class JsonExportAdapter implements ArticleExportPort {
 
     private final ArticleExportAssembler articleExportAssembler;
-    private final ExportTargetResolver targetResolver;
+    private final PipelineRunSettings runSettings;
     private final JsonExportFileWriter fileWriter;
 
     private boolean initialized;
+    private ExportTargetResolver targetResolver;
 
     @Override
     public void export(ArticleExportBatch batch) {
@@ -42,8 +47,12 @@ public class JsonExportAdapter implements ArticleExportPort {
 
     @Override
     public void complete() {
-        fileWriter.complete();
-        initialized = false;
+        try {
+            fileWriter.complete();
+        } finally {
+            initialized = false;
+            targetResolver = null;
+        }
     }
 
     @PreDestroy
@@ -53,6 +62,11 @@ public class JsonExportAdapter implements ArticleExportPort {
 
     private void initialize() {
         if (!initialized) {
+            targetResolver = switch (runSettings.current().export().mode()) {
+                case CATEGORY -> new CategoryExportTargetResolver();
+                case TOPICS -> new TopicExportTargetResolver();
+                case TAGS -> new SportsBettingExportTargetResolver();
+            };
             fileWriter.initialize(targetResolver.initialTargets());
             initialized = true;
         }

@@ -9,11 +9,12 @@ import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
 class ParallelExecutorTest {
 
     private final ExecutorService executorService = Executors.newFixedThreadPool(2);
-    private final ParallelExecutor parallelExecutor = new ParallelExecutor(executorService);
+    private final ParallelExecutor parallelExecutor = new ParallelExecutor(executorService, mock(PipelineRunSettings.class));
 
     @AfterEach
     void shutdownExecutor() {

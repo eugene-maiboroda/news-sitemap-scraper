@@ -2,7 +2,7 @@ package com.article.adapter.export;
 
 import com.article.adapter.export.dto.ArticleExportDto;
 import com.article.adapter.export.model.JsonExportTarget;
-import com.article.bootstrap.properties.StorageProps;
+import com.article.application.PipelineRunSettings;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -22,7 +22,7 @@ import java.util.Map;
 public class JsonExportFileWriter {
 
     private final ObjectMapper objectMapper;
-    private final StorageProps storageProps;
+    private final PipelineRunSettings runSettings;
 
     private final Map<JsonExportTarget, FileState> files = new LinkedHashMap<>();
 
@@ -54,33 +54,36 @@ public class JsonExportFileWriter {
 
     public void complete() {
         RuntimeException failure = null;
-        for (Map.Entry<JsonExportTarget, FileState> entry : files.entrySet()) {
-            try {
-                Files.writeString(
-                        entry.getValue().path(),
-                        entry.getKey().isTopic() ? "]}}" : "]}",
-                        StandardCharsets.UTF_8,
-                        StandardOpenOption.APPEND
-                );
-            } catch (IOException e) {
-                if (failure == null) {
-                    failure = new IllegalStateException(
-                            "Failed to complete export file: " + entry.getValue().path(),
-                            e
+        try {
+            for (Map.Entry<JsonExportTarget, FileState> entry : files.entrySet()) {
+                try {
+                    Files.writeString(
+                            entry.getValue().path(),
+                            entry.getKey().isTopic() ? "]}}" : "]}",
+                            StandardCharsets.UTF_8,
+                            StandardOpenOption.APPEND
                     );
-                } else {
-                    failure.addSuppressed(e);
+                } catch (IOException | RuntimeException e) {
+                    if (failure == null) {
+                        failure = new IllegalStateException(
+                                "Failed to complete export file: " + entry.getValue().path(),
+                                e
+                        );
+                    } else {
+                        failure.addSuppressed(e);
+                    }
                 }
             }
+        } finally {
+            files.clear();
         }
-        files.clear();
         if (failure != null) {
             throw failure;
         }
     }
 
     private FileState createFile(JsonExportTarget target) {
-        Path path = Path.of(storageProps.exportDir()).resolve(target.relativePath());
+        Path path = Path.of(runSettings.current().storage().exportDir()).resolve(target.relativePath());
         try {
             Files.createDirectories(path.getParent());
             try (BufferedWriter writer = Files.newBufferedWriter(

@@ -17,6 +17,7 @@ public class DiscoverLinksUseCase {
 
     private final ArticlePersistencePort articlePersistencePort;
     private final SitemapDiscoveryPort sitemapDiscoveryPort;
+    private final PipelineRunSettings runSettings;
 
     public void discoverLinks(List<String> sitemapUrls, int batchSize) {
         log.info("Step: DISCOVER LINKS");
@@ -29,6 +30,9 @@ public class DiscoverLinksUseCase {
         log.info("NYPost Article Collector started | sitemaps={}", sitemapUrls.size());
 
         for (String sitemapUrl : sitemapUrls) {
+            if (runSettings.isStopRequested()) {
+                break;
+            }
             try {
                 List<ArticleLink> links = sitemapDiscoveryPort.discoverLinks(sitemapUrl);
                 insertInBatches(links, batchSize);

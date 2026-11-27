@@ -22,6 +22,7 @@ public class DownloadVideosUseCase {
     private final VideoPersistencePort videoPersistencePort;
     private final VideoDownloadPort videoDownloadPort;
     private final ParallelExecutor parallelExecutor;
+    private final PipelineRunSettings runSettings;
 
     public void downloadVideos(int batchSize) {
         log.info("Step: DOWNLOAD VIDEOS");
@@ -29,7 +30,8 @@ public class DownloadVideosUseCase {
         int batches = 0;
         int downloaded = 0;
         List<Video> batch;
-        while (!(batch = videoPersistencePort.findPendingVideos(batchSize)).isEmpty()) {
+        while (!runSettings.isStopRequested()
+                && !(batch = videoPersistencePort.findPendingVideos(batchSize)).isEmpty()) {
             Map<String, String> categories = articlePersistencePort.findCategoriesByArticleIds(
                     batch.stream().map(Video::articleId).distinct().toList()
             );
@@ -40,9 +42,15 @@ public class DownloadVideosUseCase {
             parallelExecutor.execute(downloadBatch, this::downloadVideoOne);
             batches++;
             downloaded += batch.size();
-            log.info("Downloaded video batch {} ({} videos)", batches, batch.size());
+            if (!runSettings.isStopRequested()) {
+                log.info("Downloaded video batch {} ({} videos)", batches, batch.size());
+            }
         }
-        log.info("Download video finished ({} videos, {} batches)", downloaded, batches);
+        if (runSettings.isStopRequested()) {
+            log.info("Video download stopped");
+        } else {
+            log.info("Download video finished ({} videos, {} batches)", downloaded, batches);
+        }
     }
 
     private void downloadVideoOne(VideoDownloadData data) {

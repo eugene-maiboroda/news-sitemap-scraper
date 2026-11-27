@@ -24,12 +24,13 @@ public class AuthorUseCase {
     private final ParallelExecutor parallelExecutor;
     private final AuthorExportPort authorExportPort;
     private final AuthorAvatarDownloadPort authorAvatarDownloadPort;
+    private final PipelineRunSettings runSettings;
 
     public void processAuthors(int batchSize) {
         log.info("Step: PROCESS AUTHORS");
         int extracted = extractAuthorsFromArticle(batchSize);
-        int parsed = parseAuthors();
-        int avatars = downloadAvatars();
+        int parsed = runSettings.isStopRequested() ? 0 : parseAuthors();
+        int avatars = runSettings.isStopRequested() ? 0 : downloadAvatars();
         log.info(
                 "Author processing finished ({} candidates processed, {} parsed, {} avatars downloaded)",
                 extracted,
@@ -42,7 +43,8 @@ public class AuthorUseCase {
         int page = 0;
         int extracted = 0;
         List<Author> authors;
-        while (!(authors = authorPersistencePort.findCandidates(page, batchSize)).isEmpty()) {
+        while (!runSettings.isStopRequested()
+                && !(authors = authorPersistencePort.findCandidates(page, batchSize)).isEmpty()) {
             authorPersistencePort.insert(authors);
             extracted += authors.size();
             page++;
@@ -70,9 +72,16 @@ public class AuthorUseCase {
 
     public void exportAuthors() {
         log.info("Step: EXPORT AUTHORS");
+        if (runSettings.isStopRequested()) {
+            return;
+        }
         List<Author> authors = authorPersistencePort.findAll();
         authorExportPort.export(authors);
-        log.info("Author export finished ({} authors)", authors.size());
+        if (runSettings.isStopRequested()) {
+            log.info("Author export stopped");
+        } else {
+            log.info("Author export finished ({} authors)", authors.size());
+        }
     }
 
     private Author enrichAuthor(Author author) {

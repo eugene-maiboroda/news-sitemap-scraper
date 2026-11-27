@@ -1,16 +1,18 @@
 package com.article.adapter.http.browser;
 
+import com.article.application.PipelineRunSettings;
 import com.article.bootstrap.properties.BrowserProps;
 import com.article.port.out.BrowserPort;
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.BrowserType;
+import com.microsoft.playwright.Playwright;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Response;
 import com.microsoft.playwright.options.WaitUntilState;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -19,11 +21,9 @@ import java.util.Optional;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "browser", name = "enabled", havingValue = "true")
 public class PlaywrightBrowserAdapter implements BrowserPort {
 
-    private final Browser browser;
-    private final BrowserProps browserProps;
+    private final PipelineRunSettings runSettings;
 
     @Override
     public Optional<byte[]> interceptResponseBody(
@@ -32,7 +32,16 @@ public class PlaywrightBrowserAdapter implements BrowserPort {
             List<String> consentClickSelectors,
             String scrollIntoViewSelector) {
 
-        try (BrowserContext context = browser.newContext()) {
+        BrowserProps browserProps = runSettings.current().browser();
+        if (!browserProps.enabled()) {
+            return Optional.empty();
+        }
+
+        BrowserType.LaunchOptions options = new BrowserType.LaunchOptions()
+                .setHeadless(browserProps.headless());
+        try (Playwright playwright = Playwright.create();
+             Browser browser = playwright.chromium().launch(options);
+             BrowserContext context = browser.newContext()) {
             Page page = context.newPage();
             page.setDefaultTimeout(browserProps.timeoutMs());
 

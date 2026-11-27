@@ -24,20 +24,30 @@ public class ExportArticlesUseCase {
     private final VideoPersistencePort videoPersistencePort;
     private final ImagePersistencePort imagePersistencePort;
     private final ArticleExportPort articleExportPort;
+    private final PipelineRunSettings runSettings;
 
     public void exportArticles(int batchSize) {
         log.info("Step: EXPORT JSON");
         int page = 0;
+        Throwable failure = null;
         try {
             List<ArticleWithMetadata> batch;
-            while (!(batch = articlePersistencePort.findArticlesForExport(page, batchSize)).isEmpty()) {
+            while (!runSettings.isStopRequested()
+                    && !(batch = articlePersistencePort.findArticlesForExport(page, batchSize)).isEmpty()) {
                 exportBatch(batch);
                 page++;
             }
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            throw e;
         } finally {
-            articleExportPort.complete();
+            completeExport(failure);
         }
-        log.info("Export finished | pages={}", page);
+        if (runSettings.isStopRequested()) {
+            log.info("Export stopped | pages={}", page);
+        } else {
+            log.info("Export finished | pages={}", page);
+        }
     }
 
     private void exportBatch(List<ArticleWithMetadata> batch) {
@@ -46,5 +56,18 @@ public class ExportArticlesUseCase {
         List<Image> images = imagePersistencePort.findImagesByArticleIds(articleIds);
         List<Video> videos = videoPersistencePort.findVideosByArticleIds(articleIds);
         articleExportPort.export(new ArticleExportBatch(batch, images, videos));
+    }
+
+    private void completeExport(Throwable failure) {
+        try {
+            articleExportPort.complete();
+        } catch (RuntimeException | Error e) {
+            if (failure == null) {
+                throw e;
+            }
+            if (failure != e) {
+                failure.addSuppressed(e);
+            }
+        }
     }
 }

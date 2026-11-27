@@ -1,7 +1,13 @@
 package com.article.adapter.export;
 
 import com.article.adapter.export.mapper.ArticleExportMapper;
-import com.article.adapter.export.resolver.TopicExportTargetResolver;
+import com.article.application.PipelineRunSettings;
+import com.article.bootstrap.properties.BrowserProps;
+import com.article.bootstrap.properties.CollectorProps;
+import com.article.bootstrap.properties.ExportMode;
+import com.article.bootstrap.properties.ExportProps;
+import com.article.bootstrap.properties.StepsProps;
+import com.article.bootstrap.properties.VideoProps;
 import com.article.bootstrap.properties.StorageProps;
 import com.article.domain.article.Article;
 import com.article.domain.article.TaxonomyLink;
@@ -40,11 +46,19 @@ class JsonExportAdapterTest {
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         ArticleExportMapper mapper = new ArticleExportMapper();
         ArticleExportAssembler assembler = new ArticleExportAssembler(mapper);
+        PipelineRunSettings runSettings = new PipelineRunSettings(
+                new CollectorProps(1, 0, List.of(), null),
+                new StorageProps(tempDir.toString(), null, null, null),
+                new ExportProps(ExportMode.TOPICS, null),
+                new BrowserProps(false, true, 30000),
+                new VideoProps(300, "yt-dlp"),
+                new StepsProps(null, null, null, null, null, null, null, null)
+        );
         JsonExportFileWriter writer = new JsonExportFileWriter(
                 objectMapper,
-                new StorageProps(tempDir.toString(), null, null, null)
+                runSettings
         );
-        adapter = new JsonExportAdapter(assembler, new TopicExportTargetResolver(), writer);
+        adapter = new JsonExportAdapter(assembler, runSettings, writer);
     }
 
     @AfterEach

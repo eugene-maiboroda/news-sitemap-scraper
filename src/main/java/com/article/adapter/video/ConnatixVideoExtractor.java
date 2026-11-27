@@ -2,13 +2,13 @@ package com.article.adapter.video;
 
 import com.article.adapter.http.HttpContentLoader;
 import com.article.adapter.video.decoder.MediaBinDecoder;
+import com.article.application.PipelineRunSettings;
 import com.article.domain.media.DownloadStatus;
 import com.article.domain.media.Video;
 import com.article.domain.media.VideoPlatform;
 import com.article.port.out.BrowserPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Component;
@@ -30,8 +30,6 @@ import java.util.regex.Pattern;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "browser", name = "enabled", havingValue = "true")
-@ConditionalOnProperty(prefix = "steps.extract-connatix-videos", name = "enabled", havingValue = "true")
 @Order(30)
 public class ConnatixVideoExtractor implements VideoExtractor {
 
@@ -48,9 +46,15 @@ public class ConnatixVideoExtractor implements VideoExtractor {
 
     private final BrowserPort browserPort;
     private final HttpContentLoader httpContentLoader;
+    private final PipelineRunSettings runSettings;
 
     @Override
     public Optional<Video> extract(Document document, String articleId, String articleUrl) {
+        PipelineRunSettings.Snapshot settings = runSettings.current();
+        if (!settings.extractConnatixVideos() || !settings.browser().enabled()) {
+            return Optional.empty();
+        }
+
         Optional<byte[]> plsBody = browserPort.interceptResponseBody(
                 articleUrl, PLS_URL_CONTAINS, COOKIE_CONSENT_SELECTORS, CONNATIX_PLAYER_SELECTOR);
         if (plsBody.isEmpty()) {

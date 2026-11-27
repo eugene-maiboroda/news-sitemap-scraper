@@ -1,10 +1,10 @@
 package com.article.adapter.video;
 
 import com.article.adapter.shared.FileNaming;
-import com.article.bootstrap.properties.StorageProps;
-import com.article.bootstrap.properties.VideoProps;
-import com.article.application.dto.VideoDownloadData;
+import com.article.application.PipelineRunSettings;
 import com.article.application.dto.DownloadResult;
+import com.article.application.dto.VideoDownloadData;
+import com.article.bootstrap.properties.VideoProps;
 import com.article.domain.media.VideoPlatform;
 import com.article.port.out.VideoDownloadPort;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class VideoDownloadAdapter implements VideoDownloadPort {
 
-    private final StorageProps storageProps;
+    private final PipelineRunSettings runSettings;
     private final VideoProps videoProps;
 
     @Override
@@ -46,7 +46,7 @@ public class VideoDownloadAdapter implements VideoDownloadPort {
         }
 
         try {
-            Path dir = Path.of(storageProps.videosDir(), FileNaming.categorySlug(data.category()));
+            Path dir = Path.of(runSettings.current().storage().videosDir(), FileNaming.categorySlug(data.category()));
             String prefix = FileNaming.videoFilePrefix(
                     data.category(),
                     data.articleId(),
@@ -80,7 +80,7 @@ public class VideoDownloadAdapter implements VideoDownloadPort {
             closeQuietly(process.getOutputStream());
             drainOutput(process);
 
-            int timeoutSeconds = videoProps.timeoutMs();
+            int timeoutSeconds = runSettings.current().video().timeoutMs();
             if (!process.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
                 process.destroyForcibly();
                 log.warn("yt-dlp timed out after {} seconds", timeoutSeconds);

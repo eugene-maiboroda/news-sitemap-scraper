@@ -19,6 +19,7 @@ public class ParseArticlesUseCase {
     private final ArticleParserPort articleParserPort;
     private final ParallelExecutor parallelExecutor;
     private final ParsedMediaService parsedMediaService;
+    private final PipelineRunSettings runSettings;
 
     public void parsePages(int batchSize) {
         log.info("Step: PARSE PAGES");
@@ -26,10 +27,15 @@ public class ParseArticlesUseCase {
 
         List<ArticleLink> batch;
 
-        while (!(batch = articlePersistencePort.findNewBatch(batchSize)).isEmpty()) {
+        while (!runSettings.isStopRequested()
+                && !(batch = articlePersistencePort.findNewBatch(batchSize)).isEmpty()) {
             parallelExecutor.execute(batch, this::parseSingle);
         }
-        log.info("No more links to parse");
+        if (runSettings.isStopRequested()) {
+            log.info("Parsing stopped");
+        } else {
+            log.info("No more links to parse");
+        }
     }
 
     private void parseSingle(ArticleLink link) {

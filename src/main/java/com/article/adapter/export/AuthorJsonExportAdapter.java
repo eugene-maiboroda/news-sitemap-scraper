@@ -1,7 +1,7 @@
 package com.article.adapter.export;
 
 import com.article.adapter.export.mapper.AuthorExportMapper;
-import com.article.bootstrap.properties.StorageProps;
+import com.article.application.PipelineRunSettings;
 import com.article.domain.author.Author;
 import com.article.port.out.AuthorExportPort;
 import com.fasterxml.jackson.core.JsonEncoding;
@@ -31,14 +31,15 @@ public class AuthorJsonExportAdapter implements AuthorExportPort {
     private static final String FILE_NAME = "AllAuthors.json";
 
     private final ObjectMapper objectMapper;
-    private final StorageProps storageProps;
+    private final PipelineRunSettings runSettings;
     private final AuthorExportMapper authorExportMapper;
 
     @Override
     public void export(List<Author> authors) {
         try {
-            Path exportDir = Path.of(storageProps.exportDir());
+            Path exportDir = Path.of(runSettings.current().storage().exportDir());
             Files.createDirectories(exportDir);
+            int written = 0;
 
             try (JsonGenerator generator = objectMapper.getFactory().createGenerator(
                     exportDir.resolve(FILE_NAME).toFile(), JsonEncoding.UTF8
@@ -48,14 +49,18 @@ public class AuthorJsonExportAdapter implements AuthorExportPort {
                 generator.writeArrayFieldStart("authors");
 
                 for (Author author : authors) {
+                    if (runSettings.isStopRequested()) {
+                        break;
+                    }
                     objectMapper.writeValue(generator, authorExportMapper.toDto(author));
+                    written++;
                 }
 
                 generator.writeEndArray();
                 generator.writeEndObject();
             }
 
-            log.info("[EXPORT][authors] {} -> {} authors", FILE_NAME, authors.size());
+            log.info("[EXPORT][authors] {} -> {} authors", FILE_NAME, written);
         } catch (IOException e) {
             throw new RuntimeException("Failed to export authors to " + FILE_NAME, e);
         }

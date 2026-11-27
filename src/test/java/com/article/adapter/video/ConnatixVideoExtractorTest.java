@@ -1,6 +1,14 @@
 package com.article.adapter.video;
 
 import com.article.adapter.http.HttpContentLoader;
+import com.article.application.PipelineRunSettings;
+import com.article.bootstrap.properties.BrowserProps;
+import com.article.bootstrap.properties.CollectorProps;
+import com.article.bootstrap.properties.ExportMode;
+import com.article.bootstrap.properties.ExportProps;
+import com.article.bootstrap.properties.StepsProps;
+import com.article.bootstrap.properties.VideoProps;
+import com.article.bootstrap.properties.StorageProps;
 import com.article.domain.media.DownloadStatus;
 import com.article.domain.media.Video;
 import com.article.domain.media.VideoPlatform;
@@ -9,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,7 +35,15 @@ class ConnatixVideoExtractorTest {
 
     private final BrowserPort browserPort = mock(BrowserPort.class);
     private final HttpContentLoader httpContentLoader = mock(HttpContentLoader.class);
-    private final ConnatixVideoExtractor extractor = new ConnatixVideoExtractor(browserPort, httpContentLoader);
+    private final PipelineRunSettings runSettings = new PipelineRunSettings(
+            new CollectorProps(1, 0, List.of(), null),
+            new StorageProps(null, null, null, null),
+            new ExportProps(ExportMode.CATEGORY, null),
+            new BrowserProps(true, true, 30000),
+            new VideoProps(300, "yt-dlp"),
+            new StepsProps(null, null, null, null, null, null, null, new StepsProps.ToggleStep(true))
+    );
+    private final ConnatixVideoExtractor extractor = new ConnatixVideoExtractor(browserPort, httpContentLoader, runSettings);
 
     @Test
     void extractsContentAndStreamIdFromFiveUuids() {

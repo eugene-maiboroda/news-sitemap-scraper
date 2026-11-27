@@ -23,7 +23,7 @@ class ExportArticlesUseCaseTest {
         ArticleExportPort export = mock(ArticleExportPort.class);
         when(articles.findArticlesForExport(0, 500)).thenReturn(List.of());
 
-        new ExportArticlesUseCase(articles, videos, images, export).exportArticles(500);
+        new ExportArticlesUseCase(articles, videos, images, export, mock(PipelineRunSettings.class)).exportArticles(500);
 
         verify(articles).findArticlesForExport(0, 500);
         verify(export).complete();
@@ -38,7 +38,7 @@ class ExportArticlesUseCaseTest {
         when(articles.findArticlesForExport(0, 500))
                 .thenThrow(new IllegalStateException("database unavailable"));
 
-        ExportArticlesUseCase useCase = new ExportArticlesUseCase(articles, videos, images, export);
+        ExportArticlesUseCase useCase = new ExportArticlesUseCase(articles, videos, images, export, mock(PipelineRunSettings.class));
 
         assertThrows(IllegalStateException.class, () -> useCase.exportArticles(500));
         verify(export).complete();

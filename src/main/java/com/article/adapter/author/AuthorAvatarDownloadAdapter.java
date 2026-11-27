@@ -2,9 +2,9 @@ package com.article.adapter.author;
 
 import com.article.adapter.http.HttpContentLoader;
 import com.article.adapter.shared.FileNaming;
-import com.article.bootstrap.properties.StorageProps;
-import com.article.domain.author.Author;
+import com.article.application.PipelineRunSettings;
 import com.article.application.dto.DownloadResult;
+import com.article.domain.author.Author;
 import com.article.port.out.AuthorAvatarDownloadPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,13 +28,13 @@ import java.nio.file.StandardCopyOption;
 public class AuthorAvatarDownloadAdapter implements AuthorAvatarDownloadPort {
 
     private final HttpContentLoader contentLoader;
-    private final StorageProps storageProps;
+    private final PipelineRunSettings runSettings;
 
     @Override
     public DownloadResult download(Author author) {
         Path temporaryFile = null;
         try {
-            Path dir = Path.of(storageProps.avatarsDir());
+            Path dir = Path.of(runSettings.current().storage().avatarsDir());
             String fileId = FileNaming.avatarFilePrefix(author.id());
             String fileName = fileId + FileNaming.resolveExtension(author.avatarUrl());
             Path target = dir.resolve(fileName);
